@@ -24,16 +24,18 @@ spring:
     open-in-view: false
 
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: imandi.effectivesolutions@gmail.com
-    password: seru ufcf bope mqzq
+    host: smtp.mailersend.net
+    port: 2525
+    username: MS_YQu52G@test-68zxl270qpk4j905.mlsender.net
+    password: mssp.O8er9bB.351ndgwdv3qlzqx8.3pNoFSY
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
+    default-encoding: UTF-8
+    from: MS_YQu52G@test-68zxl270qpk4j905.mlsender.net
 
 server:
   port: 8080

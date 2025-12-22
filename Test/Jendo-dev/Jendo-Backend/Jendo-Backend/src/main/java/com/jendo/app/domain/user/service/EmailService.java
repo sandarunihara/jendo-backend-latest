@@ -1,6 +1,7 @@
 package com.jendo.app.domain.user.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -11,11 +12,15 @@ import lombok.extern.slf4j.Slf4j;
 public class EmailService {
     @Autowired
     private JavaMailSender mailSender;
+    
+    @Value("${spring.mail.from:noreply@jendo.com}")
+    private String fromAddress;
 
     public void sendOtpEmail(String to, String otp) {
         log.info("=== DEV OTP for {} : {} ===", to, otp);
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromAddress);
             message.setTo(to);
             message.setSubject("Jendo - Your OTP Code");
             message.setText(buildOtpEmailBody(otp, "verify your email"));
@@ -30,6 +35,7 @@ public class EmailService {
         log.info("=== DEV PASSWORD RESET OTP for {} : {} ===", to, otp);
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromAddress);
             message.setTo(to);
             message.setSubject("Jendo - Password Reset OTP");
             message.setText(buildOtpEmailBody(otp, "reset your password"));
@@ -43,6 +49,7 @@ public class EmailService {
     public void sendWelcomeEmail(String to, String firstName) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromAddress);
             message.setTo(to);
             message.setSubject("Welcome to Jendo!");
             message.setText(String.format(

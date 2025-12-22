@@ -2,6 +2,8 @@ package com.jendo.app.domain.wellnessrecommendation.service;
 
 import com.jendo.app.common.dto.PaginationResponse;
 import com.jendo.app.common.exceptions.NotFoundException;
+import com.jendo.app.domain.jendotest.entity.JendoTest;
+import com.jendo.app.domain.jendotest.repository.JendoTestRepository;
 import com.jendo.app.domain.wellnessrecommendation.dto.WellnessRecommendationDto;
 import com.jendo.app.domain.wellnessrecommendation.dto.WellnessRecommendationRequestDto;
 import com.jendo.app.domain.wellnessrecommendation.entity.WellnessRecommendation;
@@ -13,7 +15,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,6 +26,7 @@ import java.util.stream.Collectors;
 public class WellnessRecommendationServiceImpl implements WellnessRecommendationService {
 
     private final WellnessRecommendationRepository repository;
+    private final JendoTestRepository jendoTestRepository;
 
     @Override
     public WellnessRecommendationDto create(WellnessRecommendationRequestDto request) {
@@ -77,6 +82,28 @@ public class WellnessRecommendationServiceImpl implements WellnessRecommendation
         return recommendations.stream()
                 .map(this::toDto)
                 .collect(Collectors.toList());
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public List<WellnessRecommendationDto> getRecommendationsForUser(Long userId) {
+        // Find user's latest Jendo test
+        Optional<JendoTest> latestTest = jendoTestRepository.findFirstByUserIdOrderByTestDateDescCreatedAtDesc(userId);
+        
+        if (latestTest.isEmpty()) {
+            // No test found, return empty list or default recommendations
+            return Collections.emptyList();
+        }
+        
+        String riskLevel = latestTest.get().getRiskLevel();
+        
+        if (riskLevel == null || riskLevel.trim().isEmpty()) {
+            // No risk level, return empty list
+            return Collections.emptyList();
+        }
+        
+        // Get recommendations based on risk level
+        return getByRiskLevel(riskLevel);
     }
 
     @Override

@@ -60,9 +60,6 @@ export const ProfileScreen: React.FC = () => {
           onPress={() => router.push('/notifications')}
         >
           <Ionicons name="notifications" size={24} color={COLORS.primary} />
-          <View style={styles.notificationBadge}>
-            <Text style={styles.notificationBadgeText}>3</Text>
-          </View>
         </TouchableOpacity>
       </View>
 

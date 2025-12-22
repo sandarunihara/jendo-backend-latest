@@ -85,10 +85,8 @@ export const MyReportsScreen: React.FC = () => {
   return (
     <ScreenWrapper safeArea backgroundColor={COLORS.background}>
       <View style={styles.header}>
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Ionicons name="finger-print" size={24} color={COLORS.primary} />
-          </View>
+        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#F3E8FF', alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="finger-print" size={24} color={COLORS.primary} />
         </View>
         <Text style={styles.headerTitle}>My Reports</Text>
         <TouchableOpacity 
@@ -96,9 +94,6 @@ export const MyReportsScreen: React.FC = () => {
           onPress={() => router.push('/notifications' as any)}
         >
           <Ionicons name="notifications" size={24} color={COLORS.primary} />
-          <View style={styles.notificationBadge}>
-            <Text style={styles.badgeText}>3</Text>
-          </View>
         </TouchableOpacity>
       </View>
 

@@ -229,11 +229,8 @@ export const JendoReportsScreen: React.FC = () => {
         paddingHorizontal: 16,
         paddingVertical: 12,
       }}>
-        <View style={{ width: 44, height: 44, borderRadius: 22, overflow: 'hidden' }}>
-          <Image 
-            source={{ uri: user?.profileImage || 'https://randomuser.me/api/portraits/women/44.jpg' }} 
-            style={{ width: '100%', height: '100%' }}
-          />
+        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#F3E8FF', alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="finger-print" size={24} color={COLORS.primary} />
         </View>
         <Text style={{ fontSize: 20, fontWeight: '700', color: COLORS.primary }}>Jendo Reports</Text>
         <TouchableOpacity 
@@ -241,19 +238,6 @@ export const JendoReportsScreen: React.FC = () => {
           style={{ position: 'relative' }}
         >
           <Ionicons name="notifications" size={24} color={COLORS.primary} />
-          <View style={{
-            position: 'absolute',
-            top: -4,
-            right: -4,
-            width: 18,
-            height: 18,
-            borderRadius: 9,
-            backgroundColor: COLORS.primary,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-            <Text style={{ color: '#FFFFFF', fontSize: 10, fontWeight: '600' }}>3</Text>
-          </View>
         </TouchableOpacity>
       </View>
       

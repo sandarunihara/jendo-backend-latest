@@ -56,6 +56,15 @@ public class WellnessRecommendationController {
         List<WellnessRecommendationDto> recommendations = service.getByRiskLevel(riskLevel);
         return ResponseEntity.ok(ApiResponse.success(recommendations));
     }
+    
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "Get wellness recommendations for user", 
+               description = "Retrieves active wellness recommendations based on user's latest Jendo test risk level")
+    public ResponseEntity<ApiResponse<List<WellnessRecommendationDto>>> getRecommendationsForUser(
+            @PathVariable Long userId) {
+        List<WellnessRecommendationDto> recommendations = service.getRecommendationsForUser(userId);
+        return ResponseEntity.ok(ApiResponse.success(recommendations));
+    }
 
     @PutMapping("/{id}")
     @Operation(summary = "Update wellness recommendation", description = "Updates an existing wellness recommendation (Admin only)")

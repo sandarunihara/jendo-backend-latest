@@ -31,4 +31,16 @@ export const wellnessRecommendationApi = {
       return [];
     }
   },
+
+  getForUser: async (userId: number): Promise<WellnessRecommendation[]> => {
+    try {
+      const response = await httpClient.get<ApiResponse<WellnessRecommendation[]>>(
+        API_ENDPOINTS.WELLNESS.FOR_USER(userId)
+      );
+      return response.data || [];
+    } catch (error) {
+      console.error('Error fetching user wellness recommendations:', error);
+      return [];
+    }
+  },
 };

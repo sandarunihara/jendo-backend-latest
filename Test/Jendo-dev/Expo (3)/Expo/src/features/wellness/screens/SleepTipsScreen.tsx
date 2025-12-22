@@ -48,16 +48,23 @@ export const SleepTipsScreen: React.FC = () => {
   }, [user?.id]);
 
   const loadRecommendations = async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      const tests = await jendoTestApi.getTests(0, 1);
-      let userRiskLevel = 'low';
-      if (tests.content && tests.content.length > 0) {
-        userRiskLevel = tests.content[0].riskLevel || 'low';
-      }
-      setRiskLevel(userRiskLevel);
       
-      const allRecs = await wellnessRecommendationApi.getByRiskLevel(userRiskLevel);
+      // Get recommendations based on user's latest test risk level
+      const allRecs = await wellnessRecommendationApi.getForUser(user.id);
+      
+      // Extract risk level from first recommendation
+      if (allRecs.length > 0) {
+        setRiskLevel(allRecs[0].riskLevel?.toLowerCase() || 'low');
+      }
+      
+      // Filter for lifestyle recommendations only
       const lifestyleRecs = allRecs.filter(r => r.category?.toLowerCase() === 'lifestyle');
       setRecommendations(lifestyleRecs);
     } catch (error) {
@@ -84,9 +91,6 @@ export const SleepTipsScreen: React.FC = () => {
           onPress={() => router.push('/notifications')}
         >
           <Ionicons name="notifications" size={24} color={COLORS.primary} />
-          <View style={styles.notificationBadge}>
-            <Text style={styles.notificationBadgeText}>3</Text>
-          </View>
         </TouchableOpacity>
       </View>
 

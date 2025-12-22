@@ -26,19 +26,15 @@ export const WellnessScreen: React.FC = () => {
   return (
     <ScreenWrapper safeArea backgroundColor={COLORS.white}>
       <View style={styles.header}>
-        <Image 
-          source={{ uri: 'https://randomuser.me/api/portraits/women/44.jpg' }} 
-          style={styles.avatar} 
-        />
+        <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: '#F3E8FF', alignItems: 'center', justifyContent: 'center' }}>
+          <Ionicons name="finger-print" size={24} color={COLORS.primary} />
+        </View>
         <Text style={styles.headerTitle}>Wellness Recommendations</Text>
         <TouchableOpacity 
           style={styles.notificationButton}
           onPress={() => router.push('/notifications')}
         >
           <Ionicons name="notifications" size={24} color={COLORS.primary} />
-          <View style={styles.notificationBadge}>
-            <Text style={styles.notificationBadgeText}>3</Text>
-          </View>
         </TouchableOpacity>
       </View>
 

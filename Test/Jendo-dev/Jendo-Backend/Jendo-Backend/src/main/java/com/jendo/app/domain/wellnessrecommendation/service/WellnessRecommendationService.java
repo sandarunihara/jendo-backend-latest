@@ -16,6 +16,7 @@ public interface WellnessRecommendationService {
     
     List<WellnessRecommendationDto> getByRiskLevel(String riskLevel);
     
+    List<WellnessRecommendationDto> getRecommendationsForUser(Long userId);
     WellnessRecommendationDto update(Long id, WellnessRecommendationRequestDto request);
     
     void delete(Long id);

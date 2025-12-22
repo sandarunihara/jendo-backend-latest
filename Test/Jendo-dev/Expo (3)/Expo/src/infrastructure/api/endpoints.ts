@@ -37,6 +37,7 @@ export const API_ENDPOINTS = {
     CHATBOT: '/wellness/chatbot',
     RECOMMENDATIONS: '/wellness-recommendations',
     BY_RISK_LEVEL: (riskLevel: string) => `/wellness-recommendations/risk-level/${riskLevel}`,
+    FOR_USER: (userId: number) => `/wellness-recommendations/user/${userId}`,
   },
   NOTIFICATIONS: {
     BASE: '/notifications',

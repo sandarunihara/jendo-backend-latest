@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../common/components/layout';
 import { COLORS } from '../../../config/theme.config';
 import { dashboardStyles as styles } from '../components';
+import { JendoScoreChart } from '../components/JendoScoreChart';
 import { useUserStore } from '../../../state/userSlice';
 import { useToast } from '../../../providers/ToastProvider';
 import { jendoTestApi, JendoTest } from '../../jendo-tests/services/jendoTestApi';
@@ -249,23 +250,6 @@ export const HomeScreen: React.FC = () => {
     notificationCount: 3,
   };
 
-  const getChartPath = () => {
-    if (scoreHistory.length === 0) return [];
-    const values = scoreHistory.map(d => d.value);
-    const minVal = Math.min(...values) - 5;
-    const maxVal = Math.max(...values) + 5;
-    const chartWidth = width - 80;
-    const chartHeight = 80;
-
-    return values.map((val, idx) => {
-      const x = scoreHistory.length === 1 ? chartWidth / 2 : (idx / (scoreHistory.length - 1)) * chartWidth;
-      const y = chartHeight - ((val - minVal) / (maxVal - minVal)) * chartHeight;
-      return { x, y, value: val };
-    });
-  };
-
-  const chartPoints = getChartPath();
-
   const hasTestData = jendoTests.length > 0;
 
   return (
@@ -367,57 +351,8 @@ export const HomeScreen: React.FC = () => {
                 </View>
               )}
             </View>
-            {hasTestData && chartPoints.length > 0 ? (
-              <View style={styles.chartContainer}>
-                <View style={styles.chartYAxis}>
-                  {(() => {
-                    const values = scoreHistory.map(d => d.value);
-                    const max = Math.max(...values);
-                    const min = Math.min(...values);
-                    const mid = Math.round((max + min) / 2);
-                    return (
-                      <>
-                        <Text style={styles.chartYLabel}>{Math.round(max)}</Text>
-                        <Text style={styles.chartYLabel}>{mid}</Text>
-                        <Text style={styles.chartYLabel}>{Math.round(min)}</Text>
-                      </>
-                    );
-                  })()}
-                </View>
-                <View style={styles.chartArea}>
-                  <View style={styles.chartLine}>
-                    {chartPoints.map((point, index) => (
-                      <React.Fragment key={index}>
-                        <View
-                          style={[
-                            styles.chartDot,
-                            { left: point.x - 4, bottom: (point.value - (Math.min(...scoreHistory.map(d => d.value)) - 5)) * 4 },
-                            index === chartPoints.length - 1 && styles.chartDotActive,
-                          ]}
-                        />
-                        {index < chartPoints.length - 1 && (
-                          <View
-                            style={[
-                              styles.chartConnector,
-                              {
-                                left: point.x,
-                                bottom: (point.value - (Math.min(...scoreHistory.map(d => d.value)) - 5)) * 4,
-                                width: chartPoints[index + 1].x - point.x,
-                                transform: [{ rotate: `${Math.atan2((chartPoints[index + 1].value - point.value) * 4, chartPoints[index + 1].x - point.x) * -1}rad` }],
-                              },
-                            ]}
-                          />
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </View>
-                  <View style={styles.chartLabels}>
-                    {scoreHistory.map((item, index) => (
-                      <Text key={index} style={styles.chartLabel}>{item.date}</Text>
-                    ))}
-                  </View>
-                </View>
-              </View>
+            {hasTestData && scoreHistory.length > 0 ? (
+              <JendoScoreChart data={scoreHistory} />
             ) : (
               <View style={{ padding: 20, alignItems: 'center' }}>
                 <Ionicons name="analytics-outline" size={40} color={COLORS.textMuted} />

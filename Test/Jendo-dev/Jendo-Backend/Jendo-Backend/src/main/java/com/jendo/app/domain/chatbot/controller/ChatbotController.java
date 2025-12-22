@@ -19,9 +19,18 @@ public class ChatbotController {
     private final ChatbotService chatbotService;
     
     @PostMapping("/message")
-    @Operation(summary = "Send a message to the Jendo Health Assistant")
+    @Operation(summary = "Send a message to the Jendo Health Assistant - Free LLM with Smart Rules")
     public ResponseEntity<ChatResponse> sendMessage(@Valid @RequestBody ChatRequest request) {
         ChatResponse response = chatbotService.sendMessage(request);
+        return ResponseEntity.ok(response);
+    }
+    
+    @PostMapping("/test")
+    @Operation(summary = "Test chatbot endpoint - Quick health check")
+    public ResponseEntity<ChatResponse> testChatbot() {
+        ChatRequest testRequest = new ChatRequest();
+        testRequest.setMessage("Hello");
+        ChatResponse response = chatbotService.sendMessage(testRequest);
         return ResponseEntity.ok(response);
     }
 }

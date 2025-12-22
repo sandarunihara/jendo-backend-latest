@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Dimensions, Linking, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LineChart } from 'react-native-gifted-charts';
 import { ScreenWrapper } from '../../../common/components/layout';
 import { COLORS } from '../../../config/theme.config';
 import { jendoTestApi, JendoTest } from '../services/jendoTestApi';
@@ -50,80 +51,69 @@ const SimpleLineChart: React.FC<{
   yLabels?: string[];
   xLabels?: string[];
 }> = ({ data, color, title, yLabels, xLabels }) => {
-  const [chartWidth, setChartWidth] = useState(screenWidth - 64);
-  const maxValue = Math.max(...data);
-  const minValue = Math.min(...data);
-  const range = maxValue - minValue || 1;
-  const chartHeight = Math.min(120, screenWidth * 0.3);
+  const chartWidth = Math.min(screenWidth - 80, 600);
   const isSmallScreen = screenWidth < 400;
-  const barWidth = isSmallScreen ? 2 : 3;
-  const fontSize = isSmallScreen ? 8 : 10;
-  const leftMargin = isSmallScreen ? 25 : 30;
   
+  const chartData = data.map((value, index) => ({
+    value: value,
+    label: xLabels ? xLabels[Math.floor((index / data.length) * xLabels.length)] : String(index),
+  }));
+
   return (
-    <View 
-      style={{ marginBottom: 16 }}
-      onLayout={(e) => setChartWidth(e.nativeEvent.layout.width - leftMargin - 16)}
-    >
-      <View style={{ height: chartHeight, position: 'relative', marginLeft: leftMargin }}>
-        {yLabels && (
-          <View style={{ position: 'absolute', left: -leftMargin, top: 0, bottom: 0, justifyContent: 'space-between' }}>
-            {yLabels.map((label, i) => (
-              <Text key={i} style={{ fontSize: fontSize, color: '#9CA3AF' }}>{label}</Text>
-            ))}
-          </View>
-        )}
+    <View style={{ marginBottom: 16, alignItems: 'center' }}>
+      <LineChart
+        data={chartData}
+        width={chartWidth}
+        height={120}
+        spacing={chartWidth / data.length}
+        initialSpacing={10}
+        endSpacing={10}
+        adjustToWidth={true}
+        thickness={2.5}
+        color={color}
+        startFillColor={`${color}15`}
+        endFillColor={`${color}05`}
+        startOpacity={0.2}
+        endOpacity={0.05}
+        areaChart
+        curved
+        hideDataPoints={true}
+        hideRules
+        hideYAxisText={false}
+        yAxisColor="#E5E7EB"
+        yAxisThickness={1}
+        xAxisColor="#E5E7EB"
+        xAxisThickness={1}
+        yAxisTextStyle={{
+          color: '#9CA3AF',
+          fontSize: isSmallScreen ? 8 : 10,
+          fontWeight: '500',
+        }}
+        noOfSections={4}
+        yAxisLabelWidth={30}
+        animateOnDataChange
+        animationDuration={600}
+      />
+      <View style={{ 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        marginTop: 12 
+      }}>
         <View style={{ 
-          flex: 1, 
-          borderLeftWidth: 1, 
-          borderBottomWidth: 1, 
-          borderColor: '#E5E7EB',
-          justifyContent: 'flex-end',
+          width: 12, 
+          height: 3, 
+          backgroundColor: color, 
+          marginRight: 6,
+          borderRadius: 1.5 
+        }} />
+        <Text style={{ 
+          fontSize: isSmallScreen ? 10 : 12, 
+          color: '#6B7280',
+          fontWeight: '500'
         }}>
-          <View style={{ 
-            flexDirection: 'row', 
-            alignItems: 'flex-end', 
-            height: '100%',
-            paddingHorizontal: isSmallScreen ? 2 : 4,
-          }}>
-            {data.map((value, index) => {
-              const height = ((value - minValue) / range) * (chartHeight - 20) + 10;
-              return (
-                <View 
-                  key={index} 
-                  style={{ 
-                    flex: 1, 
-                    alignItems: 'center',
-                    justifyContent: 'flex-end',
-                    height: '100%',
-                  }}
-                >
-                  <View 
-                    style={{ 
-                      width: barWidth, 
-                      height: height,
-                      backgroundColor: color,
-                      borderRadius: barWidth / 2,
-                    }} 
-                  />
-                </View>
-              );
-            })}
-          </View>
-        </View>
-      </View>
-      {xLabels && (
-        <View style={{ flexDirection: 'row', marginLeft: leftMargin, marginTop: 4 }}>
-          {xLabels.slice(0, isSmallScreen ? 4 : xLabels.length).map((label, i) => (
-            <Text key={i} style={{ flex: 1, fontSize: fontSize, color: '#9CA3AF', textAlign: 'center' }}>
-              {label}
-            </Text>
-          ))}
-        </View>
-      )}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 8 }}>
-        <View style={{ width: 12, height: 3, backgroundColor: color, marginRight: 6 }} />
-        <Text style={{ fontSize: isSmallScreen ? 10 : 12, color: '#6B7280' }}>{title}</Text>
+          {title}
+        </Text>
       </View>
     </View>
   );

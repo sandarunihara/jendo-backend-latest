@@ -48,6 +48,12 @@ public class JendoTest {
     @Column(name = "test_date")
     private LocalDate testDate;
 
+    @Column(name = "vascular_risk")
+    private BigDecimal vascularRisk;
+
+    @Column(name = "pdf_file_path", length = 500)
+    private String pdfFilePath;
+
     @Column(name = "created_by")
     private Long createdBy;
 

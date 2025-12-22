@@ -19,6 +19,8 @@ public class JendoTestMapper {
                 .bloodPressure(dto.getBloodPressure())
                 .spo2(dto.getSpo2())
                 .testDate(dto.getTestDate())
+                .vascularRisk(dto.getVascularRisk())
+                .pdfFilePath(dto.getPdfFilePath())
                 .build();
     }
 
@@ -34,6 +36,8 @@ public class JendoTestMapper {
                 .bloodPressure(entity.getBloodPressure())
                 .spo2(entity.getSpo2())
                 .testDate(entity.getTestDate())
+                .vascularRisk(entity.getVascularRisk())
+                .pdfFilePath(entity.getPdfFilePath())
                 .createdAt(entity.getCreatedAt())
                 .build();
     }

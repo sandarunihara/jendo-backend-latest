@@ -44,4 +44,10 @@ public class JendoTestRequestDto {
 
     @Schema(description = "Date of test", example = "2024-01-15")
     private LocalDate testDate;
+
+    @Schema(description = "Vascular risk percentage", example = "25.5")
+    private BigDecimal vascularRisk;
+
+    @Schema(description = "PDF file path (optional)", example = "uploads/report-attachments/test-123.pdf")
+    private String pdfFilePath;
 }

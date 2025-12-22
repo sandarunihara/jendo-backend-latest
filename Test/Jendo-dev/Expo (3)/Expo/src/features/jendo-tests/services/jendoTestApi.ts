@@ -9,7 +9,10 @@ export interface JendoTestRequestDto {
   riskLevel?: string;
   testTime?: string; // HH:mm:ss
   bloodPressure?: string; // "120/80"
+  spo2?: number;
   testDate?: string; // YYYY-MM-DD
+  vascularRisk?: number;
+  pdfFilePath?: string;
 }
 
 export interface JendoTestResponseDto {
@@ -23,6 +26,8 @@ export interface JendoTestResponseDto {
   bloodPressure: string; // "120/80"
   spo2?: number; // Oxygen saturation percentage
   testDate: string; // YYYY-MM-DD
+  vascularRisk?: number;
+  pdfFilePath?: string;
   createdAt: string; // ISO timestamp
 }
 
@@ -58,6 +63,8 @@ export interface JendoTest {
   bloodPressureSystolic: number;
   bloodPressureDiastolic: number;
   spo2?: number;
+  vascularRisk?: number;
+  pdfFilePath?: string;
   createdAt: string;
 }
 
@@ -92,6 +99,7 @@ const parseBloodPressure = (bp: string): { systolic: number; diastolic: number }
 const mapBackendTestToFrontend = (dto: JendoTestResponseDto): JendoTest => {
   const bp = parseBloodPressure(dto.bloodPressure || '0/0');
   const spo2Value = dto.spo2 != null ? Number(dto.spo2) : undefined;
+  const vascularRiskValue = dto.vascularRisk != null ? Number(dto.vascularRisk) : undefined;
   return {
     id: dto.id.toString(),
     userId: dto.userId.toString(),
@@ -105,6 +113,8 @@ const mapBackendTestToFrontend = (dto: JendoTestResponseDto): JendoTest => {
     bloodPressureSystolic: bp.systolic,
     bloodPressureDiastolic: bp.diastolic,
     spo2: spo2Value,
+    vascularRisk: vascularRiskValue,
+    pdfFilePath: dto.pdfFilePath,
     createdAt: dto.createdAt,
   };
 };

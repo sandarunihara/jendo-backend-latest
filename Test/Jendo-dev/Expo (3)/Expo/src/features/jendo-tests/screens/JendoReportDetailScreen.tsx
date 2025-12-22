@@ -219,8 +219,10 @@ export const JendoReportDetailScreen: React.FC = () => {
 
   const pulseData = generatePulseData();
   const tempData = generateTempData();
-  const vascularRisk = test.score ? (100 - test.score) / 100 * 100 : 58;
-  const spo2 = 98.7;
+  // Use real backend data for vascularRisk, fallback to calculated value from score
+  const vascularRisk = test.vascularRisk ?? (test.score ? (100 - test.score) : 0);
+  // Use real backend data for spo2, fallback to default
+  const spo2 = test.spo2 ?? 98.7;
 
   return (
     <ScreenWrapper safeArea backgroundColor="#FFFFFF">

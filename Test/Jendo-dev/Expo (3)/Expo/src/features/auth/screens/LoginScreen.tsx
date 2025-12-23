@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, Text, TouchableOpacity, Alert, StyleSheet, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { ScreenWrapper } from '../../../common/components/layout';
 import { Button, Input } from '../../../common/components/ui';
 import { COLORS, TYPOGRAPHY, SPACING } from '../../../config/theme.config';
@@ -43,6 +44,8 @@ interface FormErrors {
 }
 
 const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '';
+const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '';
+const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '';
 
 export const LoginScreen: React.FC = () => {
   const router = useRouter();
@@ -70,6 +73,45 @@ export const LoginScreen: React.FC = () => {
       setGoogleLoading(false);
     }
   }, [loginWithGoogle, router, showToast]);
+
+  // Configure Google Sign-In for Android/iOS
+  useEffect(() => {
+    if (Platform.OS === 'android' || Platform.OS === 'ios') {
+      GoogleSignin.configure({
+        webClientId: GOOGLE_WEB_CLIENT_ID,
+        offlineAccess: true,
+      });
+    }
+  }, []);
+
+  const handleNativeGoogleLogin = async () => {
+    setGoogleLoading(true);
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      
+      if (userInfo.idToken) {
+        await loginWithGoogle({ idToken: userInfo.idToken });
+        showToast('Login successful!', 'success');
+        router.replace('/(tabs)');
+      } else {
+        showToast('Failed to get Google ID token', 'error');
+      }
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        showToast('Sign in cancelled', 'info');
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        showToast('Sign in already in progress', 'info');
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        showToast('Play services not available', 'error');
+      } else {
+        showToast('Google sign in failed', 'error');
+        console.error('Google Sign-In Error:', error);
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (Platform.OS !== 'web' || !GOOGLE_CLIENT_ID) return;
@@ -271,9 +313,15 @@ export const LoginScreen: React.FC = () => {
               />
             </View>
           ) : (
-            <TouchableOpacity style={styles.socialButton} onPress={handleFallbackGoogleLogin}>
+            <TouchableOpacity 
+              style={styles.socialButton} 
+              onPress={handleNativeGoogleLogin}
+              disabled={googleLoading}
+            >
               <Ionicons name="logo-google" size={20} color="#DB4437" />
-              <Text style={styles.socialButtonText}>Continue with Google</Text>
+              <Text style={styles.socialButtonText}>
+                {googleLoading ? 'Signing in...' : 'Continue with Google'}
+              </Text>
             </TouchableOpacity>
           )}
         </View>

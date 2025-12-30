@@ -12,24 +12,24 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Notification response data")
+@Schema(description = "Notification response DTO")
 public class NotificationResponseDto {
 
-    @Schema(description = "Notification unique identifier", example = "1")
+    @Schema(description = "Notification ID", example = "1")
     private Long id;
 
     @Schema(description = "User ID", example = "1")
     private Long userId;
 
-    @Schema(description = "Notification message", example = "Your appointment is scheduled for tomorrow")
+    @Schema(description = "Notification message", example = "You have an appointment tomorrow")
     private String message;
 
-    @Schema(description = "Notification type", example = "APPOINTMENT")
+    @Schema(description = "Notification type", example = "APPOINTMENT_REMINDER")
     private String type;
 
-    @Schema(description = "Read status", example = "false")
+    @Schema(description = "Whether notification has been read", example = "false")
     private Boolean isRead;
 
-    @Schema(description = "Creation timestamp", example = "2024-01-15T10:30:00")
+    @Schema(description = "When notification was created", example = "2025-12-30T18:00:00")
     private LocalDateTime createdAt;
 }

@@ -2,6 +2,7 @@ package com.jendo.app.domain.notification.service;
 
 import com.jendo.app.common.dto.PaginationResponse;
 import com.jendo.app.common.exceptions.NotFoundException;
+import com.jendo.app.domain.notification.dto.NotificationReceiveDto;
 import com.jendo.app.domain.notification.dto.NotificationRequestDto;
 import com.jendo.app.domain.notification.dto.NotificationResponseDto;
 import com.jendo.app.domain.notification.entity.Notification;
@@ -117,5 +118,25 @@ public class NotificationServiceImpl implements NotificationService {
             throw new NotFoundException("Notification", id);
         }
         notificationRepository.deleteById(id);
+    }
+
+    @Override
+    public NotificationResponseDto saveReceivedNotification(NotificationReceiveDto request) {
+        logger.info("Saving Firebase notification for user ID: {} - Message: {}", request.getUserId(), request.getMessage());
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new NotFoundException("User", request.getUserId()));
+
+        Notification notification = Notification.builder()
+                .user(user)
+                .message(request.getMessage())
+                .type(request.getType() != null ? request.getType() : "SYSTEM")
+                .isRead(false)
+                .build();
+
+        notification = notificationRepository.save(notification);
+
+        logger.info("Firebase notification saved with ID: {} - FCM ID: {}", notification.getId(), request.getFcmMessageId());
+        return notificationMapper.toResponseDto(notification);
     }
 }

@@ -10,101 +10,84 @@ export interface NotificationResponse {
   createdAt: string;
 }
 
-export interface ApiNotificationResponse {
-  success: boolean;
-  data: NotificationResponse | NotificationResponse[] | { content: NotificationResponse[] } | number;
-  message?: string;
-}
-
 export const notificationsApi = {
-  getByUserId: async (userId: number, page: number = 0, size: number = 20): Promise<NotificationResponse[]> => {
+  // Get notifications for a specific user with pagination
+  getByUserId: async (userId: number, page = 0, size = 10): Promise<NotificationResponse[]> => {
     try {
-      console.log('[Notifications] Fetching for user:', userId);
-      const response = await httpClient.get<ApiNotificationResponse>(
-        `${API_ENDPOINTS.NOTIFICATIONS.BASE}/user/${userId}?page=${page}&size=${size}`
-      );
-      console.log('[Notifications] Response:', JSON.stringify(response, null, 2));
-      if (response.success && response.data) {
-        if (Array.isArray(response.data)) {
-          console.log('[Notifications] Data is array, count:', response.data.length);
-          return response.data;
-        }
-        const paginated = response.data as { content?: NotificationResponse[] };
-        console.log('[Notifications] Data is paginated, count:', paginated.content?.length || 0);
-        return paginated.content || [];
-      }
-      console.log('[Notifications] No data or not successful');
-      return [];
+      const response = await httpClient.get<{
+        success: boolean;
+        data: {
+          content: NotificationResponse[];
+          pageNumber: number;
+          pageSize: number;
+          totalElements: number;
+          totalPages: number;
+          first: boolean;
+          last: boolean;
+        };
+      }>(`/notifications/user/${userId}?page=${page}&size=${size}`);
+      return response.data?.content || [];
     } catch (error) {
-      console.error('[Notifications] Error fetching:', error);
+      console.error('Error fetching notifications:', error);
       return [];
     }
   },
 
-  getUnread: async (userId: number): Promise<NotificationResponse[]> => {
-    try {
-      const response = await httpClient.get<ApiNotificationResponse>(
-        `${API_ENDPOINTS.NOTIFICATIONS.BASE}/user/${userId}/unread`
-      );
-      if (response.success && response.data) {
-        return response.data as NotificationResponse[];
-      }
-      return [];
-    } catch (error) {
-      console.error('Error fetching unread notifications:', error);
-      return [];
-    }
-  },
-
+  // Get unread count for user
   getUnreadCount: async (userId: number): Promise<number> => {
     try {
-      const response = await httpClient.get<ApiNotificationResponse>(
-        `${API_ENDPOINTS.NOTIFICATIONS.BASE}/user/${userId}/unread/count`
+      const response = await httpClient.get<{ success: boolean; data: number }>(
+        `/notifications/user/${userId}/unread/count`
       );
-      if (response.success && response.data !== undefined) {
-        return response.data as number;
-      }
-      return 0;
+      return response.data || 0;
     } catch (error) {
       console.error('Error fetching unread count:', error);
       return 0;
     }
   },
 
-  markAsRead: async (notificationId: number): Promise<NotificationResponse | null> => {
+  // Mark a notification as read
+  markAsRead: async (notificationId: number): Promise<boolean> => {
     try {
-      const response = await httpClient.patch<ApiNotificationResponse>(
-        API_ENDPOINTS.NOTIFICATIONS.MARK_READ(String(notificationId))
-      );
-      if (response.success && response.data) {
-        return response.data as NotificationResponse;
-      }
-      return null;
+      await httpClient.patch(`/notifications/${notificationId}/read`, {});
+      return true;
     } catch (error) {
       console.error('Error marking notification as read:', error);
-      return null;
+      return false;
     }
   },
 
+  // Mark all notifications as read for user
   markAllAsRead: async (userId: number): Promise<boolean> => {
     try {
-      const response = await httpClient.patch<ApiNotificationResponse>(
-        `${API_ENDPOINTS.NOTIFICATIONS.BASE}/user/${userId}/read-all`
-      );
-      return response.success;
+      await httpClient.patch(`/notifications/user/${userId}/read-all`, {});
+      return true;
     } catch (error) {
       console.error('Error marking all as read:', error);
       return false;
     }
   },
 
+  // Delete a notification
   delete: async (notificationId: number): Promise<boolean> => {
     try {
-      await httpClient.delete(`${API_ENDPOINTS.NOTIFICATIONS.BASE}/${notificationId}`);
+      await httpClient.delete(`/notifications/${notificationId}`);
       return true;
     } catch (error) {
       console.error('Error deleting notification:', error);
       return false;
     }
   },
+
+  // Schedule appointment reminder
+  scheduleAppointmentReminder: (appointmentId: string, reminderTimeISO: string) =>
+    httpClient.post('/notifications/schedule', {
+      appointmentId,
+      type: 'APPOINTMENT_REMINDER',
+      reminderTime: reminderTimeISO,
+    }),
+
+  // Cancel appointment reminder
+  cancelAppointmentReminder: (appointmentId: string) =>
+    httpClient.delete(`/notifications/appointment/${appointmentId}/reminder`),
 };

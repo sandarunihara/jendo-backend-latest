@@ -3,6 +3,7 @@ import { useUserStore } from '../state/userSlice';
 import { storageService } from '../infrastructure/storage';
 import { STORAGE_KEYS } from '../config/storage.config';
 import { authApi } from '../features/auth/services/authApi';
+import { initPushForUser } from '../services/pushNotifications';
 import { AuthResponse, UserProfile, LoginCredentials, SignupData, GoogleAuthData } from '../types/models';
 
 interface AuthContextType {
@@ -29,6 +30,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const { user, setUser, clearUser } = useUserStore();
 
   const isAuthenticated = !!user;
+
+  useEffect(() => {
+    if (user?.id) {
+      initPushForUser(user.id);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     checkAuthState();

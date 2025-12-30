@@ -1,6 +1,7 @@
 package com.jendo.app.domain.notification.service;
 
 import com.jendo.app.common.dto.PaginationResponse;
+import com.jendo.app.domain.notification.dto.NotificationReceiveDto;
 import com.jendo.app.domain.notification.dto.NotificationRequestDto;
 import com.jendo.app.domain.notification.dto.NotificationResponseDto;
 
@@ -23,4 +24,6 @@ public interface NotificationService {
     void markAllAsRead(Long userId);
     
     void deleteNotification(Long id);
+
+    NotificationResponseDto saveReceivedNotification(NotificationReceiveDto request);
 }

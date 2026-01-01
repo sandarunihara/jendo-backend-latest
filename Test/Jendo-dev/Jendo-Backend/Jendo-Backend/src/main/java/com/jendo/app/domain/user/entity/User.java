@@ -59,6 +59,10 @@ public class User {
     @Column(name = "address")
     private String address;
     
+    @Column(name = "timezone", length = 50)
+    @Builder.Default
+    private String timezone = "Asia/Colombo";  // Default to Sri Lanka timezone
+    
     @Column(name = "weight")
     private Double weight;
     

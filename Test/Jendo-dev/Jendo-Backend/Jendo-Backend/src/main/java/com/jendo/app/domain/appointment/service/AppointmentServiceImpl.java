@@ -24,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -66,16 +68,30 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     /**
      * Creates a scheduled notification 1 hour before the appointment
+     * Handles timezone conversion between user's local time and server time
      */
     private void createAppointmentReminder(Appointment appointment) {
         try {
-            // Combine date and time to get appointment start datetime
-            LocalDateTime appointmentDateTime = LocalDateTime.of(
+            // Get user's timezone (default to Asia/Colombo if not set)
+            String userTimezone = appointment.getUser().getTimezone();
+            if (userTimezone == null || userTimezone.isEmpty()) {
+                userTimezone = "Asia/Colombo";
+            }
+            ZoneId userZone = ZoneId.of(userTimezone);
+            ZoneId serverZone = ZoneId.systemDefault(); // UK timezone
+            
+            // The appointment date/time is in user's timezone
+            ZonedDateTime appointmentInUserZone = ZonedDateTime.of(
                     appointment.getDate(),
-                    appointment.getTime()
+                    appointment.getTime(),
+                    userZone
             );
-
-            // Calculate 1 hour before
+            
+            // Convert to server timezone for scheduling
+            ZonedDateTime appointmentInServerZone = appointmentInUserZone.withZoneSameInstant(serverZone);
+            LocalDateTime appointmentDateTime = appointmentInServerZone.toLocalDateTime();
+            
+            // Calculate 1 hour before (in server time)
             LocalDateTime reminderTime = appointmentDateTime.minusHours(1);
 
                 String doctorName = appointment.getDoctor() != null ?
@@ -96,13 +112,13 @@ public class AppointmentServiceImpl implements AppointmentService {
                                 doctorName,
                                 formattedTime
                         ))
-                        .scheduledFor(reminderTime)
+                        .scheduledFor(reminderTime)  // Stored in server time (UK)
                         .sent(false)
                         .build();
 
                 scheduledNotificationRepository.save(notification);
-                logger.info("Created appointment reminder for appointment ID: {} scheduled for {}",
-                        appointment.getId(), reminderTime);
+                logger.info("Created appointment reminder for appointment ID: {} scheduled for {} (server time), user time: {}",
+                        appointment.getId(), reminderTime, appointmentInUserZone);
             } else {
                 logger.warn("Appointment time is too soon for reminder. Appointment ID: {}",
                         appointment.getId());
@@ -120,12 +136,12 @@ public class AppointmentServiceImpl implements AppointmentService {
                                 doctorName,
                                 formattedTime
                         ))
-                        .scheduledFor(appointmentDateTime)  // ← At the exact appointment time
+                        .scheduledFor(appointmentDateTime)  // Stored in server time (UK)
                         .sent(false)
                         .build();
 
                 scheduledNotificationRepository.save(appointmentNotification);
-                logger.info("Created appointment-time notification for appointment ID: {} scheduled for {}",
+                logger.info("Created appointment-time notification for appointment ID: {} scheduled for {} (server time)",
                         appointment.getId(), appointmentDateTime);
             } else {
                 logger.warn("Appointment time is in the past. Appointment ID: {}",

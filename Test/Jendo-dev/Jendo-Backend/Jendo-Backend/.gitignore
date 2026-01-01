@@ -76,3 +76,6 @@ node_modules/
 # Environment
 .env
 .env.local
+
+
+jendo-firebase-admin.json

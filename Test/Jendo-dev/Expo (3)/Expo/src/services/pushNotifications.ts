@@ -232,16 +232,8 @@ function handleNotificationNavigation(data?: Record<string, string>) {
   }
 
   try {
-    if (data?.appointmentId) {
-      console.log('📅 Navigate to appointment:', data.appointmentId);
-      r.push('/appointments');
-    } else if (data?.testId) {
-      console.log('🧪 Navigate to test:', data.testId);
-      // router.push('/jendo-tests');
-    } else if (data?.actionUrl) {
-      console.log('🔗 Navigate to URL:', data.actionUrl);
-      // router.push(data.actionUrl as any);
-    }
+    // Always navigate to notifications screen when a notification is tapped
+    r.push('/notifications');
   } catch (error) {
     console.error('Error navigating from notification:', error);
   }

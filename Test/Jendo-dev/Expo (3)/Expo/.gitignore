@@ -37,3 +37,9 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+
+
+# Firebase and Google Services
+google-services.json
+android/app/google-services.json
+jendo-43b74-firebase-adminsdk-fbsvc-0cde941182.json

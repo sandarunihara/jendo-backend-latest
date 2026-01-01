@@ -3,7 +3,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
@@ -98,40 +98,42 @@ function RootLayoutContent() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="auth/login" options={{ headerShown: false }} />
-      <Stack.Screen name="auth/signup" options={{ headerShown: false }} />
-      <Stack.Screen name="auth/forgot-password" options={{ headerShown: false }} />
-      <Stack.Screen name="auth/verify-otp" options={{ headerShown: false }} />
-      <Stack.Screen name="notifications" options={{ headerShown: false }} />
-      <Stack.Screen name="jendo-reports/[id]" options={{ headerShown: false }} />
-      <Stack.Screen name="my-reports/[categoryId]" options={{ headerShown: false }} />
-      <Stack.Screen name="my-reports/[categoryId]/[sectionId]" options={{ headerShown: false }} />
-      <Stack.Screen name="my-reports/[categoryId]/[sectionId]/[itemId]" options={{ headerShown: false }} />
-      <Stack.Screen name="my-reports/[categoryId]/[sectionId]/[itemId]/add" options={{ headerShown: false, presentation: 'modal' }} />
-      <Stack.Screen name="my-reports/[categoryId]/[sectionId]/[itemId]/edit/[valueId]" options={{ headerShown: false }} />
-      <Stack.Screen name="my-reports/add" options={{ headerShown: false, presentation: 'modal' }} />
-      <Stack.Screen name="wellness/chatbot" options={{ headerShown: false }} />
-      <Stack.Screen name="wellness/learning" options={{ headerShown: false }} />
-      <Stack.Screen name="wellness/diet" options={{ headerShown: false }} />
-      <Stack.Screen name="wellness/exercise" options={{ headerShown: false }} />
-      <Stack.Screen name="wellness/sleep" options={{ headerShown: false }} />
-      <Stack.Screen name="wellness/stress" options={{ headerShown: false }} />
-      <Stack.Screen name="doctors/[id]/index" options={{ headerShown: false }} />
-      <Stack.Screen name="doctors/[id]/book" options={{ headerShown: false, presentation: 'modal' }} />
-      <Stack.Screen name="doctors/[id]/confirm" options={{ headerShown: false }} />
-      <Stack.Screen name="doctors/[id]/payment" options={{ headerShown: false }} />
-      <Stack.Screen name="doctors/[id]/confirmation" options={{ headerShown: false }} />
-      <Stack.Screen name="appointments" options={{ headerShown: false }} />
-      <Stack.Screen name="profile/personal" options={{ headerShown: false }} />
-      <Stack.Screen name="profile/health" options={{ headerShown: false }} />
-      <Stack.Screen name="profile/password" options={{ headerShown: false }} />
-      <Stack.Screen name="profile/notifications" options={{ headerShown: false }} />
-      <Stack.Screen name="+not-found" />
-    </Stack>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom', 'left', 'right']}>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/signup" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/forgot-password" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/verify-otp" options={{ headerShown: false }} />
+        <Stack.Screen name="notifications" options={{ headerShown: false }} />
+        <Stack.Screen name="jendo-reports/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="my-reports/[categoryId]" options={{ headerShown: false }} />
+        <Stack.Screen name="my-reports/[categoryId]/[sectionId]" options={{ headerShown: false }} />
+        <Stack.Screen name="my-reports/[categoryId]/[sectionId]/[itemId]" options={{ headerShown: false }} />
+        <Stack.Screen name="my-reports/[categoryId]/[sectionId]/[itemId]/add" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="my-reports/[categoryId]/[sectionId]/[itemId]/edit/[valueId]" options={{ headerShown: false }} />
+        <Stack.Screen name="my-reports/add" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="wellness/chatbot" options={{ headerShown: false }} />
+        <Stack.Screen name="wellness/learning" options={{ headerShown: false }} />
+        <Stack.Screen name="wellness/diet" options={{ headerShown: false }} />
+        <Stack.Screen name="wellness/exercise" options={{ headerShown: false }} />
+        <Stack.Screen name="wellness/sleep" options={{ headerShown: false }} />
+        <Stack.Screen name="wellness/stress" options={{ headerShown: false }} />
+        <Stack.Screen name="doctors/[id]/index" options={{ headerShown: false }} />
+        <Stack.Screen name="doctors/[id]/book" options={{ headerShown: false, presentation: 'modal' }} />
+        <Stack.Screen name="doctors/[id]/confirm" options={{ headerShown: false }} />
+        <Stack.Screen name="doctors/[id]/payment" options={{ headerShown: false }} />
+        <Stack.Screen name="doctors/[id]/confirmation" options={{ headerShown: false }} />
+        <Stack.Screen name="appointments" options={{ headerShown: false }} />
+        <Stack.Screen name="profile/personal" options={{ headerShown: false }} />
+        <Stack.Screen name="profile/health" options={{ headerShown: false }} />
+        <Stack.Screen name="profile/password" options={{ headerShown: false }} />
+        <Stack.Screen name="profile/notifications" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+    </SafeAreaView>
   );
 }
 

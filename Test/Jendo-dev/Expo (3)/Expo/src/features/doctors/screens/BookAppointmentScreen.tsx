@@ -213,12 +213,7 @@ export const BookAppointmentScreen: React.FC = () => {
           <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={{ flex: 1, fontSize: 18, fontWeight: '600', textAlign: 'center' }}>Book Appointment</Text>
-        <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center' }}>
-          <Ionicons name="notifications" size={18} color="#fff" />
-          <View style={{ position: 'absolute', top: -2, right: -2, width: 16, height: 16, borderRadius: 8, backgroundColor: '#E91E63', justifyContent: 'center', alignItems: 'center' }}>
-            <Text style={{ fontSize: 10, color: '#fff', fontWeight: '600' }}>3</Text>
-          </View>
-        </View>
+        <View style={{ width: 32 }} />
       </View>
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16 }}>

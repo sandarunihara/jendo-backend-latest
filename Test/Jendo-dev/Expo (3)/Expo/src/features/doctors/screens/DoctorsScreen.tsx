@@ -130,9 +130,6 @@ export const DoctorsScreen: React.FC = () => {
             onPress={() => router.push('/notifications')}
           >
             <Ionicons name="notifications" size={24} color={COLORS.primary} />
-            <View style={styles.notificationBadge}>
-              <Text style={styles.notificationBadgeText}>3</Text>
-            </View>
           </TouchableOpacity>
         </View>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>

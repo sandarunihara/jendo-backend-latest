@@ -65,15 +65,7 @@ export default function PaymentGatewayRoute() {
           <Ionicons name="arrow-back" size={24} color={COLORS.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Payment</Text>
-        <TouchableOpacity 
-          style={styles.notificationButton}
-          onPress={() => router.push('/notifications')}
-        >
-          <Ionicons name="notifications" size={24} color={COLORS.primary} />
-          <View style={styles.notificationBadge}>
-            <Text style={styles.notificationBadgeText}>3</Text>
-          </View>
-        </TouchableOpacity>
+        <View style={{ width: 24 }} />
       </View>
 
       <ScrollView 
@@ -120,7 +112,7 @@ export default function PaymentGatewayRoute() {
             onPress={() => setPaymentMethod('paypal')}
           >
             <View style={[styles.methodIcon, { backgroundColor: paymentMethod === 'paypal' ? '#E3F2FD' : '#F5F5F5' }]}>
-              <MaterialCommunityIcons name="paypal" size={20} color={paymentMethod === 'paypal' ? '#003087' : COLORS.textSecondary} />
+              <Ionicons name="logo-paypal" size={20} color={paymentMethod === 'paypal' ? '#003087' : COLORS.textSecondary} />
             </View>
             <Text style={styles.methodText}>PayPal</Text>
             <View style={[styles.radioOuter, paymentMethod === 'paypal' && styles.radioOuterActive]}>

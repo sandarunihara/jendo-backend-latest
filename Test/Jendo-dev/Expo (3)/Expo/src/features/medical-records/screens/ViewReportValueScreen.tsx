@@ -156,25 +156,7 @@ export const ViewReportValueScreen: React.FC = () => {
             {itemName}
           </Text>
         </View>
-        <TouchableOpacity 
-          style={{ padding: 8 }}
-          onPress={() => router.push('/notifications' as any)}
-        >
-          <Ionicons name="notifications" size={24} color={COLORS.primary} />
-          <View style={{
-            position: 'absolute',
-            top: 4,
-            right: 4,
-            backgroundColor: COLORS.error,
-            width: 16,
-            height: 16,
-            borderRadius: 8,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
-            <Text style={{ color: '#fff', fontSize: 10, fontWeight: '600' }}>3</Text>
-          </View>
-        </TouchableOpacity>
+        <View style={{ width: 24 }} />
       </View>
 
       <ScrollView 

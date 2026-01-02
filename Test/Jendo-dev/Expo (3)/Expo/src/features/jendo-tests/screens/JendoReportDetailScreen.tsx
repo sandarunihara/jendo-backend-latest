@@ -1,191 +1,113 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Dimensions, Linking, Platform } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, TouchableOpacity, Dimensions, Linking, Platform, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { LineChart } from 'react-native-gifted-charts';
 import { ScreenWrapper } from '../../../common/components/layout';
 import { COLORS } from '../../../config/theme.config';
-import { jendoTestApi, JendoTest } from '../services/jendoTestApi';
+import { jendoReportApi, JendoReport } from '../services/jendoReportApi';
 import { useAuth } from '../../../providers/AuthProvider';
 
 const screenWidth = Dimensions.get('window').width;
 
-const calculateAge = (dateOfBirth: string | undefined): number | null => {
-  if (!dateOfBirth) return null;
-  try {
-    const birthDate = new Date(dateOfBirth);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  } catch {
-    return null;
-  }
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { 
+    timeZone: 'Asia/Colombo',
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 };
 
-const getRiskColor = (level: string) => {
-  switch (level?.toLowerCase()) {
-    case 'low': return '#22C55E';
-    case 'moderate': return '#F59E0B';
-    case 'high': return '#EF4444';
-    default: return '#6B7280';
-  }
-};
-
-const getRiskLabel = (level: string) => {
-  switch (level?.toLowerCase()) {
-    case 'low': return 'Low';
-    case 'moderate': return 'Moderate';
-    case 'high': return 'High';
-    default: return 'Unknown';
-  }
-};
-
-const SimpleLineChart: React.FC<{ 
-  data: number[]; 
-  color: string; 
-  title: string;
-  yLabels?: string[];
-  xLabels?: string[];
-}> = ({ data, color, title, yLabels, xLabels }) => {
-  const chartWidth = Math.min(screenWidth - 80, 600);
-  const isSmallScreen = screenWidth < 400;
-  
-  const chartData = data.map((value, index) => ({
-    value: value,
-    label: xLabels ? xLabels[Math.floor((index / data.length) * xLabels.length)] : String(index),
-  }));
-
-  return (
-    <View style={{ marginBottom: 16, alignItems: 'center' }}>
-      <LineChart
-        data={chartData}
-        width={chartWidth}
-        height={120}
-        spacing={chartWidth / data.length}
-        initialSpacing={10}
-        endSpacing={10}
-        adjustToWidth={true}
-        thickness={2.5}
-        color={color}
-        startFillColor={`${color}15`}
-        endFillColor={`${color}05`}
-        startOpacity={0.2}
-        endOpacity={0.05}
-        areaChart
-        curved
-        hideDataPoints={true}
-        hideRules
-        hideYAxisText={false}
-        yAxisColor="#E5E7EB"
-        yAxisThickness={1}
-        xAxisColor="#E5E7EB"
-        xAxisThickness={1}
-        yAxisTextStyle={{
-          color: '#9CA3AF',
-          fontSize: isSmallScreen ? 8 : 10,
-          fontWeight: '500',
-        }}
-        noOfSections={4}
-        yAxisLabelWidth={30}
-        animateOnDataChange
-        animationDuration={600}
-      />
-      <View style={{ 
-        flexDirection: 'row', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        marginTop: 12 
-      }}>
-        <View style={{ 
-          width: 12, 
-          height: 3, 
-          backgroundColor: color, 
-          marginRight: 6,
-          borderRadius: 1.5 
-        }} />
-        <Text style={{ 
-          fontSize: isSmallScreen ? 10 : 12, 
-          color: '#6B7280',
-          fontWeight: '500'
-        }}>
-          {title}
-        </Text>
-      </View>
-    </View>
-  );
+const formatFileSize = (bytes: number): string => {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
 };
 
 export const JendoReportDetailScreen: React.FC = () => {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { user } = useAuth();
-  const [test, setTest] = useState<JendoTest | null>(null);
+  const [report, setReport] = useState<JendoReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
 
-  const userAge = calculateAge(user?.dateOfBirth);
-
   useEffect(() => {
-    loadTestDetails();
+    loadReportDetails();
   }, [id]);
 
-  const loadTestDetails = async () => {
+  const loadReportDetails = async () => {
     try {
       setLoading(true);
-      const testData = await jendoTestApi.getTestById(id as string);
-      if (testData) {
-        setTest(testData);
+      const reportData = await jendoReportApi.getReportById(id as string);
+      if (reportData) {
+        setReport(reportData);
       } else {
+        Alert.alert('Error', 'Report not found');
         router.back();
       }
     } catch (error: any) {
-      console.error('Error loading test details:', error);
+      console.error('Error loading report details:', error);
+      Alert.alert('Error', 'Failed to load report details');
       router.back();
     } finally {
       setLoading(false);
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      timeZone: 'Asia/Colombo',
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
-  };
-
-  const handleDownload = async () => {
-    setDownloading(true);
+  const handleViewPDF = async () => {
+    if (!report) return;
+    
     try {
-      const baseUrl = process.env.EXPO_PUBLIC_API_URL || '/api';
-      const pdfUrl = `${baseUrl}/jendo-tests/${id}/report.pdf`;
+      const downloadUrl = jendoReportApi.getDownloadUrl(report.id);
+      
+      // Open PDF for viewing (opens in browser on web, in PDF viewer on mobile)
       if (Platform.OS === 'web') {
-        window.open(pdfUrl, '_blank');
+        window.open(downloadUrl, '_blank');
       } else {
-        await Linking.openURL(pdfUrl);
+        const canOpen = await Linking.canOpenURL(downloadUrl);
+        if (canOpen) {
+          await Linking.openURL(downloadUrl);
+        } else {
+          Alert.alert('Error', 'Cannot open PDF viewer. Please ensure you have a PDF reader installed.');
+        }
       }
     } catch (error) {
-      console.error('Download error:', error);
-    } finally {
-      setDownloading(false);
+      console.error('View PDF error:', error);
+      Alert.alert('Error', 'Failed to open PDF. Please try again.');
     }
   };
 
-  const generatePulseData = () => {
-    return Array.from({ length: 50 }, () => Math.random() * 40 + 30);
-  };
-
-  const generateTempData = () => {
-    return Array.from({ length: 30 }, (_, i) => {
-      const x = i / 30;
-      return 0.6 - 0.1 * Math.sin(x * Math.PI) + Math.random() * 0.05;
-    });
+  const handleDownload = async () => {
+    if (!report) return;
+    
+    setDownloading(true);
+    try {
+      const downloadUrl = jendoReportApi.getDownloadUrl(report.id);
+      
+      if (Platform.OS === 'web') {
+        // Create a temporary anchor element to trigger download
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = report.originalFileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        Alert.alert('Success', 'Report download started.');
+      } else {
+        // On mobile, open URL which will prompt download/save
+        await Linking.openURL(downloadUrl);
+        Alert.alert('Success', 'Report download started. Check your downloads folder.');
+      }
+    } catch (error) {
+      console.error('Download error:', error);
+      Alert.alert('Error', 'Failed to download report. Please try again.');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   if (loading) {
@@ -207,22 +129,15 @@ export const JendoReportDetailScreen: React.FC = () => {
         </View>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={{ marginTop: 12, color: '#6B7280' }}>Loading test details...</Text>
+          <Text style={{ marginTop: 12, color: '#6B7280' }}>Loading report details...</Text>
         </View>
       </ScreenWrapper>
     );
   }
 
-  if (!test) {
+  if (!report) {
     return null;
   }
-
-  const pulseData = generatePulseData();
-  const tempData = generateTempData();
-  // Use real backend data for vascularRisk, fallback to calculated value from score
-  const vascularRisk = test.vascularRisk ?? (test.score ? (100 - test.score) : 0);
-  // Use real backend data for spo2, fallback to default
-  const spo2 = test.spo2 ?? 98.7;
 
   return (
     <ScreenWrapper safeArea backgroundColor="#FFFFFF">
@@ -237,7 +152,7 @@ export const JendoReportDetailScreen: React.FC = () => {
           <Ionicons name="arrow-back" size={24} color={COLORS.primary} />
         </TouchableOpacity>
         <Text style={{ fontSize: 20, fontWeight: '700', color: '#1F2937' }}>
-          {formatDate(test.testDate)}
+          Report Details
         </Text>
         <TouchableOpacity onPress={() => router.push('/notifications')}>
           <Ionicons name="notifications" size={24} color={COLORS.primary} />
@@ -248,50 +163,26 @@ export const JendoReportDetailScreen: React.FC = () => {
         contentContainerStyle={{ padding: 16 }}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={{ fontSize: 22, fontWeight: '700', color: '#1F2937', textAlign: 'center', marginBottom: 20 }}>
-          Vascular Health Report
-        </Text>
-
+        {/* PDF Preview Card */}
         <View style={{ 
           borderWidth: 1, 
           borderColor: '#E5E7EB', 
-          borderRadius: 12, 
-          padding: 16, 
+          borderRadius: 16, 
+          padding: 20, 
           marginBottom: 20,
           backgroundColor: '#FAFAFA',
+          alignItems: 'center',
         }}>
-          <View style={{ flexDirection: 'row', marginBottom: 12 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#6B7280' }}>Report ID:</Text>
-              <Text style={{ fontSize: 14, fontWeight: '500', color: '#1F2937' }}>eabcd</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#6B7280' }}>Operator:</Text>
-              <Text style={{ fontSize: 14, fontWeight: '500', color: '#1F2937' }}>A. Tom</Text>
-            </View>
-          </View>
-          <View style={{ flexDirection: 'row', marginBottom: 12 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#6B7280' }}>Time:</Text>
-              <Text style={{ fontSize: 14, fontWeight: '500', color: '#1F2937' }}>{test.testTime || '02:49'}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#6B7280' }}>Institute:</Text>
-              <Text style={{ fontSize: 14, fontWeight: '500', color: '#1F2937' }}>Jendo AI Health</Text>
-            </View>
-          </View>
-          <View style={{ flexDirection: 'row' }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#6B7280' }}>Patient:</Text>
-              <Text style={{ fontSize: 14, fontWeight: '500', color: '#1F2937' }}>{test.userName || 'User'}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#6B7280' }}>Age:</Text>
-              <Text style={{ fontSize: 14, fontWeight: '500', color: '#1F2937' }}>{userAge ?? '--'}</Text>
-            </View>
-          </View>
+          <MaterialCommunityIcons name="file-pdf-box" size={80} color="#EF4444" />
+          <Text style={{ fontSize: 18, fontWeight: '600', color: '#1F2937', marginTop: 16, textAlign: 'center' }}>
+            Jendo Vascular Health Report
+          </Text>
+          <Text style={{ fontSize: 14, color: '#6B7280', marginTop: 8 }}>
+            {formatFileSize(report.fileSize)}
+          </Text>
         </View>
 
+        {/* Report Information */}
         <View style={{ 
           borderWidth: 1, 
           borderColor: '#E5E7EB', 
@@ -300,134 +191,89 @@ export const JendoReportDetailScreen: React.FC = () => {
           marginBottom: 20,
           backgroundColor: '#FFFFFF',
         }}>
-          <View style={{ flexDirection: 'row', marginBottom: 12 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#6B7280' }}>Vascular Risk:</Text>
-              <Text style={{ fontSize: 16, fontWeight: '600', color: getRiskColor(test.riskLevel) }}>
-                {vascularRisk.toFixed(1)}%
-              </Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#6B7280' }}>SpO2:</Text>
-              <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>{spo2}%</Text>
-            </View>
-          </View>
-          <View style={{ flexDirection: 'row', marginBottom: 12 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#6B7280' }}>Systolic BP:</Text>
-              <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
-                {test.bloodPressureSystolic || 147} mmHg
-              </Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#6B7280' }}>Diastolic BP:</Text>
-              <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
-                {test.bloodPressureDiastolic || 79} mmHg
-              </Text>
-            </View>
-          </View>
-          <View style={{ flexDirection: 'row' }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 12, color: '#6B7280' }}>Heart Rate:</Text>
-              <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937' }}>
-                {test.heartRate || 76} bpm
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={{ 
-          borderWidth: 1, 
-          borderColor: '#E5E7EB', 
-          borderRadius: 12, 
-          padding: 16, 
-          marginBottom: 20,
-        }}>
-          <SimpleLineChart 
-            data={pulseData} 
-            color="#EF4444" 
-            title="Identity Pulse"
-            yLabels={['100', '75', '50', '25', '0']}
-            xLabels={['0', '100', '200', '300', '400']}
-          />
-        </View>
-
-        <View style={{ 
-          borderWidth: 1, 
-          borderColor: '#E5E7EB', 
-          borderRadius: 12, 
-          padding: 16, 
-          marginBottom: 20,
-        }}>
-          <SimpleLineChart 
-            data={tempData.map(v => v * 100)} 
-            color="#EF4444" 
-            title="Temperature Signal"
-            yLabels={['0.6', '0.5', '0.4']}
-            xLabels={['0', '500', '1,000', '1,500', '2,000', '2,500']}
-          />
-        </View>
-
-        <View style={{ 
-          borderWidth: 1, 
-          borderColor: '#E5E7EB', 
-          borderRadius: 12, 
-          overflow: 'hidden',
-          marginBottom: 20,
-        }}>
-          <View style={{ flexDirection: 'row', backgroundColor: '#F3F4F6' }}>
-            <Text style={{ flex: 1, padding: 10, fontSize: 12, fontWeight: '600', color: '#374151', textAlign: 'center' }}>
-              Risk Level
-            </Text>
-            <Text style={{ flex: 1, padding: 10, fontSize: 12, fontWeight: '600', color: '#22C55E', textAlign: 'center' }}>
-              Low
-            </Text>
-            <Text style={{ flex: 1, padding: 10, fontSize: 12, fontWeight: '600', color: '#F59E0B', textAlign: 'center' }}>
-              Moderate
-            </Text>
-            <Text style={{ flex: 1, padding: 10, fontSize: 12, fontWeight: '600', color: '#EF4444', textAlign: 'center' }}>
-              High
-            </Text>
-          </View>
-          <View style={{ flexDirection: 'row', borderTopWidth: 1, borderColor: '#E5E7EB' }}>
-            <Text style={{ flex: 1, padding: 10, fontSize: 12, color: '#374151', textAlign: 'center' }}>
-              Risk Score
-            </Text>
-            <Text style={{ flex: 1, padding: 10, fontSize: 12, color: '#374151', textAlign: 'center' }}>
-              0-50
-            </Text>
-            <Text style={{ flex: 1, padding: 10, fontSize: 12, color: '#374151', textAlign: 'center' }}>
-              51-75
-            </Text>
-            <Text style={{ flex: 1, padding: 10, fontSize: 12, color: '#374151', textAlign: 'center' }}>
-              76-100
-            </Text>
-          </View>
-        </View>
-
-        <View style={{ 
-          backgroundColor: '#FEF3C7', 
-          borderRadius: 12, 
-          padding: 16, 
-          marginBottom: 20,
-        }}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: '#92400E', marginBottom: 8 }}>
-            Disclaimer:
+          <Text style={{ fontSize: 16, fontWeight: '600', color: '#1F2937', marginBottom: 16 }}>
+            Report Information
           </Text>
-          <Text style={{ fontSize: 11, color: '#92400E', lineHeight: 16 }}>
-            This report is generated by an artificial intelligence (AI) system based on the information provided. 
-            While the AI has been trained to detect cardiovascular conditions, it may not identify issues accurately, 
-            and its results should not be considered definitive. The AI system does not replace professional medical 
-            advice, diagnosis, or treatment. If you experience any symptoms or have concerns about your vascular health, 
-            please seek consultation with a qualified healthcare professional.
+          
+          <View style={{ marginBottom: 12 }}>
+            <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 4 }}>Report ID:</Text>
+            <Text style={{ fontSize: 14, fontWeight: '500', color: '#1F2937' }}>#{report.id}</Text>
+          </View>
+
+          <View style={{ marginBottom: 12 }}>
+            <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 4 }}>Uploaded On:</Text>
+            <Text style={{ fontSize: 14, fontWeight: '500', color: '#1F2937' }}>
+              {formatDate(report.uploadedAt)}
+            </Text>
+          </View>
+
+          <View style={{ marginBottom: 12 }}>
+            <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 4 }}>File Name:</Text>
+            <Text style={{ fontSize: 14, fontWeight: '500', color: '#1F2937' }}>
+              {report.fileName}
+            </Text>
+          </View>
+
+          <View style={{ marginBottom: 12 }}>
+            <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 4 }}>File Type:</Text>
+            <Text style={{ fontSize: 14, fontWeight: '500', color: '#1F2937' }}>
+              {report.contentType}
+            </Text>
+          </View>
+
+          {report.description && (
+            <View>
+              <Text style={{ fontSize: 12, color: '#6B7280', marginBottom: 4 }}>Description:</Text>
+              <Text style={{ fontSize: 14, fontWeight: '500', color: '#1F2937', lineHeight: 20 }}>
+                {report.description}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Important Notice */}
+        <View style={{ 
+          backgroundColor: '#DBEAFE', 
+          borderRadius: 12, 
+          padding: 16, 
+          marginBottom: 20,
+        }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Ionicons name="information-circle" size={20} color="#1E40AF" />
+            <Text style={{ fontSize: 12, fontWeight: '600', color: '#1E40AF', marginLeft: 8 }}>
+              Important Information
+            </Text>
+          </View>
+          <Text style={{ fontSize: 11, color: '#1E40AF', lineHeight: 16 }}>
+            This is an official Jendo health report. Please consult with a qualified healthcare professional 
+            for proper interpretation and medical advice regarding the contents of this report.
           </Text>
         </View>
+
+        {/* Action Buttons */}
+        <TouchableOpacity
+          onPress={handleViewPDF}
+          style={{
+            backgroundColor: COLORS.primary,
+            borderRadius: 12,
+            paddingVertical: 16,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 12,
+          }}
+        >
+          <MaterialCommunityIcons name="eye" size={20} color="#FFFFFF" />
+          <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600', marginLeft: 8 }}>
+            View PDF Report
+          </Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           onPress={handleDownload}
           disabled={downloading}
           style={{
-            backgroundColor: COLORS.primary,
+            backgroundColor: '#10B981',
             borderRadius: 12,
             paddingVertical: 16,
             flexDirection: 'row',

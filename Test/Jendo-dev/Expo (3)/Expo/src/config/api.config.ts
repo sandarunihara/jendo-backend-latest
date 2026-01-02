@@ -51,6 +51,14 @@ export const ENDPOINTS = {
     CREATE: '/jendo-tests',
     SEARCH: '/jendo-tests/search',
   },
+  JENDO_REPORTS: {
+    LIST: '/jendo-reports',
+    DETAIL: (id: string) => `/jendo-reports/${id}`,
+    BY_USER: (userId: number) => `/jendo-reports/user/${userId}`,
+    DOWNLOAD: (id: string) => `/jendo-reports/${id}/download`,
+    DELETE: (id: string) => `/jendo-reports/${id}`,
+    UPLOAD: '/jendo-reports/upload',
+  },
   WELLNESS: {
     TIPS: '/wellness/tips',
     TIP_DETAIL: (id: string) => `/wellness/tips/${id}`,

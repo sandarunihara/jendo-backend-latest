@@ -15,7 +15,7 @@ public class DailyAiTipCleanupJob {
 
     private final DailyAiTipRepository dailyAiTipRepository;
 
-    @Scheduled(cron = "0 5 6 * * *")
+    @Scheduled(cron = "0 5 6 * * *", zone = "Asia/Colombo")
     public void purgeExpired() {
         LocalDateTime now = LocalDateTime.now();
         try {

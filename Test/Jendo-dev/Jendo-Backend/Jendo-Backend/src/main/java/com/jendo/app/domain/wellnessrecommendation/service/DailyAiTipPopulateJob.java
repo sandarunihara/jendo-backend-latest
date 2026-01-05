@@ -12,7 +12,7 @@ public class DailyAiTipPopulateJob {
 
     private final WellnessRecommendationService wellnessRecommendationService;
 
-    @Scheduled(cron = "0 0 6 * * *")
+    @Scheduled(cron = "0 0 6 * * *", zone = "Asia/Colombo")
     public void populateDailyTipsForAllUsers() {
         try {
             wellnessRecommendationService.generateDailyTipsForAllUsers();

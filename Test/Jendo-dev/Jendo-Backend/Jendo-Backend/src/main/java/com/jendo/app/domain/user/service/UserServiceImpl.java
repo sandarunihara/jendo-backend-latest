@@ -6,6 +6,7 @@ import com.jendo.app.common.exceptions.NotFoundException;
 import com.jendo.app.domain.user.dto.UserRequestDto;
 import com.jendo.app.domain.user.dto.UserResponseDto;
 import com.jendo.app.domain.user.dto.UserUpdateDto;
+import com.jendo.app.domain.user.dto.UserNameEmailDto;
 import com.jendo.app.domain.user.entity.Role;
 import com.jendo.app.domain.user.entity.User;
 import com.jendo.app.domain.user.mapper.UserMapper;
@@ -188,5 +189,19 @@ public class UserServiceImpl implements UserService {
                 .first(userPage.isFirst())
                 .last(userPage.isLast())
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserNameEmailDto> getAllUsersNamesAndEmails() {
+        logger.info("Fetching all users names and emails");
+        List<User> users = userRepository.findAll();
+        return users.stream()
+                .map(user -> UserNameEmailDto.builder()
+                        .id(user.getId())
+                        .fullName(user.getFirstName() + " " + user.getLastName())
+                        .email(user.getEmail())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

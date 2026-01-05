@@ -30,7 +30,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/uploads/**", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**","/api-docs/**","/api/doctors/**", "/api/report-categories/**", "/api/report-sections/**", "/api/report-items/**", "/api/report-values/**", "/api/learning-materials/**", "/api/wellness-recommendations/risk-level/**", "/api/chatbot/**", "/api/notifications/**","/api/jendo-tests/**","/api/wellness-recommendations/**","/api/firebase-test/**","/api/jendo-reports/**").permitAll()
+                        .requestMatchers("/api/auth/**","/api/users/**", "/uploads/**", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**","/api-docs/**","/api/doctors/**", "/api/report-categories/**", "/api/report-sections/**", "/api/report-items/**", "/api/report-values/**", "/api/learning-materials/**", "/api/wellness-recommendations/risk-level/**", "/api/chatbot/**", "/api/notifications/**","/api/jendo-tests/**","/api/wellness-recommendations/**","/api/firebase-test/**","/api/jendo-reports/**","/api/wellness-recommendations/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

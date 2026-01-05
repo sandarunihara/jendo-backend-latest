@@ -5,6 +5,7 @@ import com.jendo.app.common.dto.PaginationResponse;
 import com.jendo.app.domain.user.dto.UserRequestDto;
 import com.jendo.app.domain.user.dto.UserResponseDto;
 import com.jendo.app.domain.user.dto.UserUpdateDto;
+import com.jendo.app.domain.user.dto.UserNameEmailDto;
 import com.jendo.app.domain.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -22,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.Authentication;
 import java.io.IOException;
 import java.util.Map;
+import java.util.List;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 
@@ -124,6 +126,13 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/all/names-emails")
+    @Operation(summary = "Get all users names and emails", description = "Retrieves all users with their names and emails only")
+    public ResponseEntity<ApiResponse<List<UserNameEmailDto>>> getAllUsersNamesAndEmails() {
+        List<UserNameEmailDto> users = userService.getAllUsersNamesAndEmails();
+        return ResponseEntity.ok(ApiResponse.success(users, "Users retrieved successfully"));
     }
 
     @PostMapping(value = "/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

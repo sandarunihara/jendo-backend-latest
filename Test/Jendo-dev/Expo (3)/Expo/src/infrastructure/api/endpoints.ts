@@ -38,6 +38,7 @@ export const API_ENDPOINTS = {
     RECOMMENDATIONS: '/wellness-recommendations',
     BY_RISK_LEVEL: (riskLevel: string) => `/wellness-recommendations/risk-level/${riskLevel}`,
     FOR_USER: (userId: number) => `/wellness-recommendations/user/${userId}`,
+    DAILY_AI_TIPS: (userId: number) => `/wellness-recommendations/user/${userId}/daily-ai-tips`,
   },
   NOTIFICATIONS: {
     BASE: '/notifications',

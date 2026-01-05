@@ -15,6 +15,7 @@ public class WellnessRecommendationDto {
     private Long id;
     private String title;
     private String description;
+    private String longDescription;
     private String category;
     private String riskLevel;
     private String type;

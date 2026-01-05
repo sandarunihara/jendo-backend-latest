@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../common/components/layout';
 import { COLORS } from '../../../config/theme.config';
 import { wellnessStyles as styles } from '../components';
 import { wellnessRecommendationApi, WellnessRecommendation } from '../services/wellnessRecommendationApi';
-import { jendoTestApi } from '../../jendo-tests/services/jendoTestApi';
 import { useAuth } from '../../../providers/AuthProvider';
 
 const getRiskColor = (level: string): string => {
@@ -29,35 +28,56 @@ const getRiskBgColor = (level: string): string => {
 
 export const DietSuggestionsScreen: React.FC = () => {
   const router = useRouter();
+  const { tip: tipParam } = useLocalSearchParams<{ tip?: string }>();
   const { user } = useAuth();
   const [recommendations, setRecommendations] = useState<WellnessRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [riskLevel, setRiskLevel] = useState<string>('low');
 
+  const parseTipParam = (param?: string | string[]): WellnessRecommendation | null => {
+    const raw = Array.isArray(param) ? param[0] : param;
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as WellnessRecommendation;
+    } catch (err) {
+      console.warn('Failed to parse tip param', err);
+      return null;
+    }
+  };
+
   useEffect(() => {
-    loadRecommendations();
-  }, [user?.id]);
+    const parsedTip = parseTipParam(tipParam);
+    if (parsedTip) {
+      setRecommendations([parsedTip]);
+      setRiskLevel(parsedTip.riskLevel?.toLowerCase() || 'low');
+      setLoading(false);
+    } else {
+      loadRecommendations();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tipParam, user?.id]);
 
   const loadRecommendations = async () => {
-    if (!user?.id) {
+    const userId = Number(user?.id);
+    if (!userId || Number.isNaN(userId)) {
       setLoading(false);
+      setRecommendations([]);
+      setRiskLevel('low');
       return;
     }
 
     try {
       setLoading(true);
-      
-      // Get recommendations based on user's latest test risk level
-      const allRecs = await wellnessRecommendationApi.getForUser(user.id);
-      
-      // Extract risk level from first recommendation (they all have the same risk level)
-      if (allRecs.length > 0) {
-        setRiskLevel(allRecs[0].riskLevel?.toLowerCase() || 'low');
+      const dailyTips = await wellnessRecommendationApi.getDailyAiTipsForUser(userId);
+      const dietTips = dailyTips?.diet || [];
+
+      if (dietTips.length > 0) {
+        setRiskLevel(dietTips[0].riskLevel?.toLowerCase() || 'low');
+      } else {
+        setRiskLevel('low');
       }
-      
-      // Filter for diet recommendations only
-      const dietRecs = allRecs.filter(r => r.category?.toLowerCase() === 'diet');
-      setRecommendations(dietRecs);
+
+      setRecommendations(dietTips);
     } catch (error) {
       console.error('Error loading diet recommendations:', error);
     } finally {
@@ -114,14 +134,22 @@ export const DietSuggestionsScreen: React.FC = () => {
             </View>
           ) : recommendations.length > 0 ? (
             <View style={styles.tipsContainer}>
-              {recommendations.map((tip) => (
-                <View key={tip.id} style={[styles.tipCardColored, { backgroundColor: getRiskBgColor(riskLevel) }]}>
+              {recommendations.map((tip, index) => (
+                <View
+                  key={tip.id ?? `${tip.category || 'diet'}-${index}`}
+                  style={[styles.tipCardColored, { backgroundColor: getRiskBgColor(riskLevel) }]}
+                >
                   <View style={styles.checkIcon}>
                     <Ionicons name="checkmark-circle" size={22} color={getRiskColor(riskLevel)} />
                   </View>
                   <View style={styles.tipContent}>
                     <Text style={styles.tipTitle}>{tip.title}</Text>
                     <Text style={styles.tipDescription}>{tip.description}</Text>
+                    {tip.longDescription ? (
+                      <Text style={[styles.tipDescription, { marginTop: 6 }]}>
+                        {tip.longDescription}
+                      </Text>
+                    ) : null}
                   </View>
                 </View>
               ))}

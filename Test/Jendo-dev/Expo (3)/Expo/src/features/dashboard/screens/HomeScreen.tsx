@@ -10,7 +10,7 @@ import { useUserStore } from '../../../state/userSlice';
 import { useToast } from '../../../providers/ToastProvider';
 import { jendoTestApi, JendoTest } from '../../jendo-tests/services/jendoTestApi';
 import { useAuth } from '../../../providers/AuthProvider';
-import { wellnessRecommendationApi, WellnessRecommendation } from '../../wellness/services/wellnessRecommendationApi';
+import { wellnessRecommendationApi, WellnessRecommendation, DailyAiTipsResponse } from '../../wellness/services/wellnessRecommendationApi';
 
 const { width } = Dimensions.get('window');
 
@@ -158,6 +158,16 @@ export const HomeScreen: React.FC = () => {
   const bmiData = useMemo(() => calculateBMI(user?.weight, user?.height), [user?.weight, user?.height]);
   const profileComplete = useMemo(() => calculateProfileCompletion(user), [user]);
 
+  const flattenDailyTips = (tips: DailyAiTipsResponse | null): WellnessRecommendation[] => {
+    if (!tips) return [];
+    return Object.values(tips).reduce<WellnessRecommendation[]>((acc, list) => {
+      if (list && Array.isArray(list)) {
+        acc.push(...list);
+      }
+      return acc;
+    }, []);
+  };
+
   const fetchJendoTests = useCallback(async () => {
     if (!isAuthenticated || !user?.id) {
       setLoading(false);
@@ -184,25 +194,28 @@ export const HomeScreen: React.FC = () => {
     fetchJendoTests();
   }, [fetchJendoTests]);
 
-  const fetchWellnessRecommendations = useCallback(async (riskLevel: string) => {
-    if (!riskLevel || riskLevel === 'Unknown') return;
+  const fetchWellnessRecommendations = useCallback(async () => {
+    const userId = Number(user?.id);
+    if (!userId || Number.isNaN(userId)) {
+      setWellnessRecommendations([]);
+      return;
+    }
     try {
       setRecommendationsLoading(true);
-      const recommendations = await wellnessRecommendationApi.getByRiskLevel(riskLevel);
-      setWellnessRecommendations(recommendations.slice(0, 4));
+      const dailyTips = await wellnessRecommendationApi.getDailyAiTipsForUser(userId);
+      const flattened = flattenDailyTips(dailyTips);
+      setWellnessRecommendations(flattened.slice(0, 12));
     } catch (error) {
       console.error('Failed to fetch wellness recommendations:', error);
+      setWellnessRecommendations([]);
     } finally {
       setRecommendationsLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   useEffect(() => {
-    const latestTestRiskLevel = jendoTests[0]?.riskLevel;
-    if (latestTestRiskLevel) {
-      fetchWellnessRecommendations(latestTestRiskLevel);
-    }
-  }, [jendoTests, fetchWellnessRecommendations]);
+    fetchWellnessRecommendations();
+  }, [fetchWellnessRecommendations]);
 
   useEffect(() => {
     if (profileComplete === 100 && !hasShownCompleteToast.current) {
@@ -468,44 +481,53 @@ export const HomeScreen: React.FC = () => {
                   </Text>
                 </View>
               ) : wellnessRecommendations.length > 0 ? (
-                wellnessRecommendations.map((recommendation, index) => {
-                  const iconInfo = getCategoryIcon(recommendation.category);
-                  const isLast = index === wellnessRecommendations.length - 1;
-                  return (
-                    <TouchableOpacity 
-                      key={recommendation.id}
-                      style={{ 
-                        flexDirection: 'row', 
-                        alignItems: 'flex-start', 
-                        paddingVertical: 10, 
-                        borderBottomWidth: isLast ? 0 : 1, 
-                        borderBottomColor: '#F3F4F6' 
-                      }}
-                      onPress={() => {}}
-                    >
-                      <View style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 8,
-                        backgroundColor: iconInfo.color + '15',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        marginRight: 10,
-                        marginTop: 2,
-                      }}>
-                        <Ionicons name={iconInfo.name} size={16} color={iconInfo.color} />
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 14, fontWeight: '500', color: COLORS.textPrimary, marginBottom: 2 }}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ paddingVertical: 4, paddingRight: 4 }}
+                >
+                  {wellnessRecommendations.map((recommendation, index) => {
+                    const iconInfo = getCategoryIcon(recommendation.category);
+                    return (
+                      <TouchableOpacity
+                        key={recommendation.id ?? `wellness-${index}`}
+                        style={{
+                          width: 240,
+                          marginRight: 12,
+                          backgroundColor: '#F9FAFB',
+                          borderRadius: 14,
+                          padding: 12,
+                          borderWidth: 1,
+                          borderColor: '#E5E7EB',
+                        }}
+                        onPress={() => {}}
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                          <View style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: 8,
+                            backgroundColor: iconInfo.color + '15',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            marginRight: 8,
+                          }}>
+                            <Ionicons name={iconInfo.name} size={16} color={iconInfo.color} />
+                          </View>
+                          <Text style={{ fontSize: 13, fontWeight: '600', color: COLORS.textPrimary }} numberOfLines={1}>
+                            {recommendation.category}
+                          </Text>
+                        </View>
+                        <Text style={{ fontSize: 15, fontWeight: '600', color: COLORS.textPrimary }} numberOfLines={2}>
                           {recommendation.title}
                         </Text>
-                        <Text style={{ fontSize: 12, color: COLORS.textSecondary, lineHeight: 16 }}>
+                        <Text style={{ fontSize: 12, color: COLORS.textSecondary, marginTop: 6 }} numberOfLines={3}>
                           {recommendation.description}
                         </Text>
-                      </View>
-                    </TouchableOpacity>
-                  );
-                })
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
               ) : (
                 <View style={{ padding: 16, alignItems: 'center' }}>
                   <Text style={{ fontSize: 13, color: COLORS.textSecondary, textAlign: 'center' }}>

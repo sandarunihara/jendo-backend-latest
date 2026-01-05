@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../../common/components/layout';
@@ -7,6 +7,8 @@ import { COLORS } from '../../../config/theme.config';
 import { wellnessStyles as styles } from '../components';
 import { useLearningMaterials } from '../../learning/hooks/useLearningMaterials';
 import { LearningMaterial } from '../../learning/types';
+import { useAuth } from '../../../providers/AuthProvider';
+import { DailyAiTipsResponse, WellnessRecommendation, wellnessRecommendationApi } from '../services/wellnessRecommendationApi';
 
 const getCategoryColor = (category: string): { bg: string; text: string } => {
   const colors: Record<string, { bg: string; text: string }> = {
@@ -22,6 +24,42 @@ const getCategoryColor = (category: string): { bg: string; text: string } => {
 export const WellnessScreen: React.FC = () => {
   const router = useRouter();
   const { data: learningData, loading: learningLoading } = useLearningMaterials(0, 5);
+  const { user } = useAuth();
+  const [dailyTips, setDailyTips] = useState<DailyAiTipsResponse | null>(null);
+  const [dailyLoading, setDailyLoading] = useState(true);
+
+  useEffect(() => {
+    const loadDailyTips = async () => {
+      const userId = Number(user?.id);
+      if (!userId || Number.isNaN(userId)) {
+        setDailyLoading(false);
+        setDailyTips(null);
+        return;
+      }
+      try {
+        setDailyLoading(true);
+        const tips = await wellnessRecommendationApi.getDailyAiTipsForUser(userId);
+        setDailyTips(tips);
+      } catch (error) {
+        console.error('Error fetching daily AI tips:', error);
+        setDailyTips(null);
+      } finally {
+        setDailyLoading(false);
+      }
+    };
+
+    loadDailyTips();
+  }, [user?.id]);
+
+  const dailyCategories = useMemo(
+    () => [
+      { key: 'diet', title: 'Diet', palette: { bg: '#E8F5E9', text: '#4CAF50' }, icon: 'nutrition' as const },
+      { key: 'exercise', title: 'Exercise', palette: { bg: '#FFF3E0', text: '#FF9800' }, icon: 'barbell' as const },
+      { key: 'sleep', title: 'Sleep', palette: { bg: '#E3F2FD', text: '#2196F3' }, icon: 'moon' as const },
+      { key: 'stress', title: 'Stress', palette: { bg: '#FCE4EC', text: '#E91E63' }, icon: 'heart' as const },
+    ],
+    []
+  );
 
   return (
     <ScreenWrapper safeArea backgroundColor={COLORS.white}>
@@ -64,91 +102,69 @@ export const WellnessScreen: React.FC = () => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Diet Suggestions</Text>
-          <TouchableOpacity 
-            style={styles.tipCard}
-            onPress={() => router.push('/wellness/diet')}
-          >
-            <View style={[styles.tipIconContainer, { backgroundColor: '#E8F5E9' }]}>
-              <MaterialCommunityIcons name="apple" size={24} color="#4CAF50" />
-            </View>
-            <View style={styles.tipContent}>
-              <Text style={styles.tipTitle}>Mediterranean Diet</Text>
-              <Text style={styles.tipDescription}>Rich in healthy fats and antioxidants</Text>
-              <View style={styles.tipBadgeRow}>
-                <View style={[styles.tipBadge, { backgroundColor: '#E8F5E9' }]}>
-                  <Text style={[styles.tipBadgeText, { color: '#4CAF50' }]}>Heart Healthy</Text>
-                </View>
-                <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
-              </View>
-            </View>
-          </TouchableOpacity>
-        </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={styles.sectionTitle}>Daily Tips</Text>
+            <Text style={{ color: COLORS.textSecondary, fontSize: 13 }}>Swipe to explore</Text>
+          </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Exercise Tips</Text>
-          <TouchableOpacity 
-            style={styles.tipCard}
-            onPress={() => router.push('/wellness/exercise')}
-          >
-            <View style={[styles.tipIconContainer, { backgroundColor: '#FFF3E0' }]}>
-              <MaterialCommunityIcons name="dumbbell" size={24} color="#FF9800" />
+          {dailyLoading ? (
+            <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+              <ActivityIndicator size="small" color={COLORS.primary} />
+              <Text style={{ marginTop: 8, color: COLORS.textSecondary }}>Loading personalized tips...</Text>
             </View>
-            <View style={styles.tipContent}>
-              <Text style={styles.tipTitle}>30-Min Morning Workout</Text>
-              <Text style={styles.tipDescription}>Start your day with energy</Text>
-              <View style={styles.tipBadgeRow}>
-                <View style={[styles.tipBadge, { backgroundColor: '#FFF3E0' }]}>
-                  <Text style={[styles.tipBadgeText, { color: '#FF9800' }]}>Beginner</Text>
+          ) : dailyTips ? (
+            dailyCategories.map((category) => {
+              const tips = (dailyTips as Record<string, WellnessRecommendation[] | undefined>)[category.key] || [];
+              if (tips.length === 0) return null;
+              return (
+                <View key={category.key} style={{ marginBottom: 12 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <View style={{ width: 34, height: 34, borderRadius: 12, backgroundColor: category.palette.bg, justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
+                      <Ionicons name={category.icon} size={18} color={category.palette.text} />
+                    </View>
+                    <Text style={{ fontSize: 15, fontWeight: '600', color: COLORS.textPrimary }}>{category.title}</Text>
+                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 4 }}>
+                    {tips.map((tip, index) => (
+                      <TouchableOpacity
+                        key={tip.id ?? `${category.key}-${index}`}
+                        style={{
+                          width: 240,
+                          marginRight: 12,
+                          backgroundColor: category.palette.bg,
+                          borderRadius: 16,
+                          padding: 14,
+                          borderWidth: 1,
+                          borderColor: category.palette.text + '30',
+                        }}
+                        onPress={() =>
+                          router.push({
+                            pathname: `/wellness/${category.key}`,
+                            params: { tip: JSON.stringify(tip) },
+                          })
+                        }
+                      >
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: category.palette.text, marginRight: 6 }} />
+                          <Text style={{ fontSize: 13, fontWeight: '600', color: category.palette.text }}>{category.title}</Text>
+                        </View>
+                        <Text style={{ fontSize: 15, fontWeight: '700', color: COLORS.textPrimary }} numberOfLines={2}>
+                          {tip.title}
+                        </Text>
+                        <Text style={{ fontSize: 13, color: COLORS.textSecondary, marginTop: 6 }} numberOfLines={3}>
+                          {tip.description}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
                 </View>
-                <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
-              </View>
+              );
+            })
+          ) : (
+            <View style={{ paddingVertical: 12 }}>
+              <Text style={{ color: COLORS.textSecondary }}>No daily tips available right now.</Text>
             </View>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Sleep Tips</Text>
-          <TouchableOpacity 
-            style={styles.tipCard}
-            onPress={() => router.push('/wellness/sleep')}
-          >
-            <View style={[styles.tipIconContainer, { backgroundColor: '#E3F2FD' }]}>
-              <Ionicons name="moon" size={24} color="#2196F3" />
-            </View>
-            <View style={styles.tipContent}>
-              <Text style={styles.tipTitle}>Better Sleep Hygiene</Text>
-              <Text style={styles.tipDescription}>Create the perfect sleep environment</Text>
-              <View style={styles.tipBadgeRow}>
-                <View style={[styles.tipBadge, { backgroundColor: '#E3F2FD' }]}>
-                  <Text style={[styles.tipBadgeText, { color: '#2196F3' }]}>7-8 Hours</Text>
-                </View>
-                <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
-              </View>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Stress Management</Text>
-          <TouchableOpacity 
-            style={styles.tipCard}
-            onPress={() => router.push('/wellness/stress')}
-          >
-            <View style={[styles.tipIconContainer, { backgroundColor: '#FCE4EC' }]}>
-              <MaterialCommunityIcons name="heart-pulse" size={24} color="#E91E63" />
-            </View>
-            <View style={styles.tipContent}>
-              <Text style={styles.tipTitle}>Mindfulness Meditation</Text>
-              <Text style={styles.tipDescription}>5-minute daily breathing exercises</Text>
-              <View style={styles.tipBadgeRow}>
-                <View style={[styles.tipBadge, { backgroundColor: '#FCE4EC' }]}>
-                  <Text style={[styles.tipBadgeText, { color: '#E91E63' }]}>Relaxation</Text>
-                </View>
-                <Ionicons name="arrow-forward" size={16} color={COLORS.primary} />
-              </View>
-            </View>
-          </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.learnSection}>

@@ -19,10 +19,14 @@ import org.springframework.web.client.RestTemplate;
 import com.jendo.app.common.dto.ApiResponse;
 import com.jendo.app.domain.user.dto.*;
 import com.jendo.app.domain.user.entity.OtpToken;
+import com.jendo.app.domain.user.entity.LabOtpToken;
 import com.jendo.app.domain.user.entity.User;
 import com.jendo.app.domain.user.mapper.UserMapper;
 import com.jendo.app.domain.user.repository.OtpTokenRepository;
+import com.jendo.app.domain.user.repository.LabOtpTokenRepository;
 import com.jendo.app.domain.user.repository.UserRepository;
+import com.jendo.app.domain.user.dto.LabOtpRequestDto;
+import com.jendo.app.domain.user.dto.LabOtpValidationDto;
 import com.jendo.app.domain.user.service.EmailService;
 import com.jendo.app.domain.user.service.UserService;
 import com.jendo.app.security.JwtUtil;
@@ -35,12 +39,14 @@ import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/auth")
+
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Authentication", description = "Authentication and authorization APIs")
 public class AuthController {
     private final EmailService emailService;
     private final OtpTokenRepository otpRepo;
+    private final LabOtpTokenRepository labOtpTokenRepository;
     private final UserService userService;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
@@ -502,5 +508,118 @@ public class AuthController {
             log.error("Failed to verify Google token", e);
             return null;
         }
+    }
+
+    /**
+     * Endpoint to send OTP to lab assistant's email
+     * POST /api/auth/lab-send-otp
+     * Request body: { "email": "user@example.com" }
+     * Response: OTP sent to email (displayed in logs for development)
+     */
+    @PostMapping("/lab-send-otp")
+    @Transactional
+    @Operation(summary = "Send Lab OTP to email", description = "Generates and sends a 6-digit OTP to the specified email")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> sendLabOtp(@Valid @RequestBody LabOtpRequestDto request) {
+        String email = request.getEmail();
+        
+        log.info("Processing lab OTP request for email: {}", email);
+        
+        // Verify user exists
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            log.warn("User not found for email: {}", email);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("User with this email does not exist"));
+        }
+        
+        // Generate 6-digit OTP
+        String otp = generateSecureOtp();
+        log.info("=== LAB OTP for {} : {} ===", email, otp);
+        
+        // Delete any existing OTP for this email
+        labOtpTokenRepository.deleteByUserEmail(email);
+        
+        // Save OTP token with 1 hour expiration and null labAssistantId
+        LabOtpToken labOtpToken = LabOtpToken.builder()
+            .otp(otp)
+            .userEmail(email)
+            .expireTime(LocalDateTime.now().plusHours(1))
+            .labAssistantId(null)
+            .build();
+        
+        labOtpTokenRepository.save(labOtpToken);
+        log.info("Lab OTP saved for email: {}", email);
+        
+        // Send OTP via email
+        emailService.sendOtpEmail(email, otp);
+        
+        Map<String, Object> response = Map.of(
+            "message", "OTP has been sent to your email",
+            "email", email,
+            "expiresIn", "60 minutes"
+        );
+        
+        return ResponseEntity.ok(ApiResponse.success(response, "OTP sent successfully"));
+    }
+
+    /**
+     * Endpoint to validate OTP and return user details
+     * GET /api/auth/lab-validate-otp
+     * Request params: email, otp, labAssistantId
+     * Response: User full details if OTP is valid
+     */
+    @GetMapping("/lab-validate-otp")
+    @Transactional
+    @Operation(summary = "Validate Lab OTP", description = "Validates the OTP for lab assistant and returns user details if valid")
+    public ResponseEntity<ApiResponse<?>> validateLabOtp(
+            @RequestParam String email,
+            @RequestParam String otp,
+            @RequestParam Long labAssistantId) {
+        
+        log.info("Processing lab OTP validation for email: {} with labAssistantId: {}", email, labAssistantId);
+        
+        // Delete expired tokens
+        labOtpTokenRepository.deleteExpiredTokens(LocalDateTime.now());
+        
+        // Find valid OTP token
+        Optional<LabOtpToken> otpTokenOptional = 
+            labOtpTokenRepository.findByUserEmailAndOtpAndExpireTimeAfter(email, otp, LocalDateTime.now());
+        
+        if (otpTokenOptional.isEmpty()) {
+            log.warn("Invalid or expired OTP for email: {}", email);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("Invalid or expired OTP"));
+        }
+        
+        // Get user details
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        if (userOptional.isEmpty()) {
+            log.warn("User not found for email: {}", email);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("User not found"));
+        }
+        
+        User user = userOptional.get();
+        LabOtpToken otpToken = otpTokenOptional.get();
+        
+        // Update labAssistantId in the OTP token
+        otpToken.setLabAssistantId(labAssistantId);
+        labOtpTokenRepository.save(otpToken);
+        log.info("Lab assistant ID updated for email: {}", email);
+        
+        // Delete this OTP token after successful validation
+//        labOtpTokenRepository.delete(otpToken);
+//        log.info("Lab OTP token deleted for email: {}", email);
+        
+        // Return user details
+        Object userDetails = userMapper.toResponseDto(user);
+        
+        Map<String, Object> response = Map.of(
+            "message", "OTP validated successfully",
+            "user", userDetails,
+            "labAssistantId", labAssistantId
+        );
+        
+        return ResponseEntity.ok(ApiResponse.success(response, "OTP validated successfully"));
     }
 }

@@ -9,15 +9,19 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/wellness-recommendations")
 @RequiredArgsConstructor
+@Slf4j
 @Tag(name = "Wellness Recommendations", description = "Wellness recommendation management APIs")
 public class WellnessRecommendationController {
 
@@ -64,6 +68,31 @@ public class WellnessRecommendationController {
             @PathVariable Long userId) {
         List<WellnessRecommendationDto> recommendations = service.getRecommendationsForUser(userId);
         return ResponseEntity.ok(ApiResponse.success(recommendations));
+    }
+
+    @GetMapping("/user/{userId}/daily-ai-tips")
+    @Operation(summary = "Get daily AI tips for user",
+            description = "Returns 3 personalized tips per category (diet, exercise, sleep, stress) valid from 6 AM to next-day 5:59:59 AM")
+    public ResponseEntity<ApiResponse<Map<String, List<WellnessRecommendationDto>>>> getDailyAiTips(
+            @PathVariable Long userId) {
+        Map<String, List<WellnessRecommendationDto>> tips = service.getDailyAiTips(userId);
+        return ResponseEntity.ok(ApiResponse.success(tips, "Daily AI tips retrieved"));
+    }
+
+    @PostMapping("/admin/generate-all-daily-tips")
+    @Operation(summary = "Manually trigger daily tips generation for all users", 
+               description = "Generates AI tips for all users for the current 6 AM window (testing/admin only)")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> generateAllDailyTips() {
+        log.info("POST /api/wellness-recommendations/admin/generate-all-daily-tips - Manual trigger");
+        service.generateDailyTipsForAllUsers();
+        
+        Map<String, Object> data = Map.of(
+            "success", true,
+            "message", "Daily tips generation triggered for all users",
+            "timestamp", LocalDateTime.now()
+        );
+        
+        return ResponseEntity.ok(ApiResponse.success(data, "Daily tips generation completed"));
     }
 
     @PutMapping("/{id}")

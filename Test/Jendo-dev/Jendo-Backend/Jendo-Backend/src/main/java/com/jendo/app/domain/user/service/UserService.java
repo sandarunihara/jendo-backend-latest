@@ -4,6 +4,8 @@ import com.jendo.app.common.dto.PaginationResponse;
 import com.jendo.app.domain.user.dto.UserRequestDto;
 import com.jendo.app.domain.user.dto.UserResponseDto;
 import com.jendo.app.domain.user.dto.UserUpdateDto;
+import com.jendo.app.domain.user.dto.UserNameEmailDto;
+import java.util.List;
 
 public interface UserService {
     
@@ -20,4 +22,6 @@ public interface UserService {
     UserResponseDto updateUser(Long id, UserUpdateDto request);
     
     void deleteUser(Long id);
+    
+    List<UserNameEmailDto> getAllUsersNamesAndEmails();
 }

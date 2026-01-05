@@ -52,6 +52,10 @@ openrouter:
   api:
     key: ${OPENROUTER_API_KEY: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}
 
+groq:
+  api:
+    key: ${GROQ_API_KEY:}
+
 springdoc:
   api-docs:
     path: /api-docs

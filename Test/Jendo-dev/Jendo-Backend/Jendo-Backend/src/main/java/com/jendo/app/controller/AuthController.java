@@ -63,6 +63,14 @@ public class AuthController {
     @Operation(summary = "Send OTP to email", description = "Sends a one-time password to the specified email")
     public ResponseEntity<ApiResponse<Map<String, Object>>> sendOtp(@RequestBody Map<String, String> req) {
         String email = req.get("email");
+        
+        // Check if email already exists
+        if (userRepository.existsByEmail(email)) {
+            log.warn("Attempt to send OTP to existing email: {}", email);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error("An account with this email already exists"));
+        }
+        
         String otp = generateSecureOtp();
         String hashedOtp = passwordEncoder.encode(otp);
         

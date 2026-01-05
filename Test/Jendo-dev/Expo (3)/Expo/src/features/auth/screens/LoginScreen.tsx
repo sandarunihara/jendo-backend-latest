@@ -41,6 +41,7 @@ declare global {
 interface FormErrors {
   email?: string;
   password?: string;
+  general?: string;
 }
 
 const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || '';
@@ -211,6 +212,55 @@ export const LoginScreen: React.FC = () => {
     return newErrors;
   };
 
+  const parseBackendError = (error: any): { field?: keyof FormErrors; message: string } => {
+    // Check for 401 status code (Unauthorized)
+    const statusCode = error?.response?.status || error?.status;
+    if (statusCode === 401) {
+      return { field: 'general', message: 'Your email or password is incorrect' };
+    }
+
+    const errorMessage = error?.message || error?.response?.data?.message || 'An error occurred';
+    const errorStr = errorMessage.toLowerCase();
+
+    // Check for status code in error message
+    if (errorStr.includes('status code 401') || errorStr.includes('401')) {
+      return { field: 'general', message: 'Your email or password is incorrect' };
+    }
+
+    // Email-related errors
+    if (errorStr.includes('email') && errorStr.includes('not found') || 
+        errorStr.includes('user not found') ||
+        errorStr.includes('no account') ||
+        errorStr.includes('email does not exist')) {
+      return { field: 'email', message: 'No account found with this email' };
+    }
+
+    // Password-related errors
+    if (errorStr.includes('password') && (errorStr.includes('incorrect') || 
+        errorStr.includes('invalid') || 
+        errorStr.includes('wrong'))) {
+      return { field: 'password', message: 'Incorrect password' };
+    }
+
+    // General invalid credentials
+    if (errorStr.includes('invalid credentials') || 
+        errorStr.includes('authentication failed') ||
+        errorStr.includes('login failed')) {
+      return { field: 'general', message: 'Your email or password is incorrect' };
+    }
+
+    // Account status errors
+    if (errorStr.includes('disabled') || errorStr.includes('suspended')) {
+      return { field: 'general', message: 'Your account has been disabled. Please contact support.' };
+    }
+
+    if (errorStr.includes('not verified') || errorStr.includes('verification')) {
+      return { field: 'general', message: 'Please verify your email before logging in' };
+    }
+
+    return { message: errorMessage };
+  };
+
   const handleLogin = async () => {
     const validationErrors = validateForm();
     const errorMessages = Object.values(validationErrors).filter(Boolean);
@@ -220,6 +270,8 @@ export const LoginScreen: React.FC = () => {
     }
 
     setLoading(true);
+    setErrors({}); // Clear previous errors
+    
     try {
       await login({ email: email.trim(), password });
       setLoading(false);
@@ -227,16 +279,15 @@ export const LoginScreen: React.FC = () => {
       router.replace('/(tabs)');
     } catch (err) {
       setLoading(false);
-      const errorMessage = err instanceof Error ? err.message : 'Invalid credentials';
-      if (errorMessage.toLowerCase().includes('email') || errorMessage.toLowerCase().includes('user not found')) {
-        setErrors({ email: 'No account found with this email' });
-        showToast('No account found with this email', 'error');
-      } else if (errorMessage.toLowerCase().includes('password') || errorMessage.toLowerCase().includes('invalid')) {
-        setErrors({ password: 'Incorrect password' });
-        showToast('Incorrect password', 'error');
-      } else {
-        showToast(errorMessage, 'error');
+      const { field, message } = parseBackendError(err);
+      
+      if (field && field !== 'general') {
+        setErrors({ [field]: message });
+      } else if (field === 'general') {
+        setErrors({ general: message });
       }
+      
+      showToast(message, 'error');
     }
   };
 
@@ -250,6 +301,13 @@ export const LoginScreen: React.FC = () => {
         </View>
 
         <View style={styles.form}>
+          {errors.general && (
+            <View style={localStyles.generalErrorContainer}>
+              <Ionicons name="alert-circle" size={20} color="#FF5252" />
+              <Text style={localStyles.generalErrorText}>{errors.general}</Text>
+            </View>
+          )}
+
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>Email</Text>
             <View style={[styles.inputWrapper, errors.email && localStyles.inputError]}>
@@ -258,7 +316,7 @@ export const LoginScreen: React.FC = () => {
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
-                  if (errors.email) setErrors({...errors, email: undefined});
+                  if (errors.email || errors.general) setErrors({});
                 }}
                 placeholder="Enter your email"
                 keyboardType="email-address"
@@ -277,7 +335,7 @@ export const LoginScreen: React.FC = () => {
                 value={password}
                 onChangeText={(text) => {
                   setPassword(text);
-                  if (errors.password) setErrors({...errors, password: undefined});
+                  if (errors.password || errors.general) setErrors({});
                 }}
                 placeholder="Enter your password"
                 secureTextEntry={!showPassword}
@@ -349,6 +407,23 @@ const localStyles = StyleSheet.create({
     color: '#FF5252',
     fontSize: TYPOGRAPHY.fontSize.sm,
     marginTop: SPACING.xs,
+  },
+  generalErrorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    backgroundColor: '#FFEBEE',
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF5252',
+    padding: SPACING.md,
+    borderRadius: SPACING.xs,
+    marginBottom: SPACING.md,
+  },
+  generalErrorText: {
+    flex: 1,
+    color: '#C62828',
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    lineHeight: 20,
   },
   googleButtonContainer: {
     alignItems: 'center',

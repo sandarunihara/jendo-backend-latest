@@ -18,6 +18,7 @@ interface FormErrors {
   password?: string;
   confirmPassword?: string;
   terms?: string;
+  general?: string;
 }
 
 export const SignupScreen: React.FC = () => {
@@ -86,10 +87,71 @@ export const SignupScreen: React.FC = () => {
     return newErrors;
   };
 
+  const parseBackendError = (error: any): { field?: keyof FormErrors; message: string } => {
+    // Check for HTTP status codes
+    const statusCode = error?.response?.status || error?.status;
+    
+    // 400 Bad Request or 409 Conflict - typically used for duplicate resources
+    if (statusCode === 400 || statusCode === 409) {
+      return { field: 'email', message: 'An account with this email already exists' };
+    }
+
+    const errorMessage = error?.message || error?.response?.data?.message || error?.response?.data?.error || 'An error occurred';
+    const errorStr = errorMessage.toLowerCase();
+
+    // Check for status code in error message
+    if (errorStr.includes('status code 400') || errorStr.includes('400') ||
+        errorStr.includes('status code 409') || errorStr.includes('409')) {
+      return { field: 'email', message: 'An account with this email already exists' };
+    }
+
+    // Email already exists - comprehensive check
+    if (errorStr.includes('email')) {
+      if (errorStr.includes('exists') || 
+          errorStr.includes('already') || 
+          errorStr.includes('registered') ||
+          errorStr.includes('taken') ||
+          errorStr.includes('duplicate') ||
+          errorStr.includes('in use') ||
+          errorStr.includes('used')) {
+        return { field: 'email', message: 'An account with this email already exists' };
+      }
+    }
+
+    // Check for generic duplicate/conflict messages
+    if (errorStr.includes('duplicate') || 
+        errorStr.includes('already exists') ||
+        errorStr.includes('already registered')) {
+      return { field: 'email', message: 'An account with this email already exists' };
+    }
+
+    // Phone already exists
+    if (errorStr.includes('phone') && (errorStr.includes('exists') || 
+        errorStr.includes('already') || 
+        errorStr.includes('registered') ||
+        errorStr.includes('in use'))) {
+      return { field: 'phone', message: 'This phone number is already registered' };
+    }
+
+    // Email validation from backend
+    if (errorStr.includes('invalid email') || errorStr.includes('email format')) {
+      return { field: 'email', message: 'Please enter a valid email address' };
+    }
+
+    // Password validation from backend
+    if (errorStr.includes('password') && (errorStr.includes('weak') || 
+        errorStr.includes('must contain') || 
+        errorStr.includes('minimum'))) {
+      return { field: 'password', message: errorMessage };
+    }
+
+    return { message: errorMessage };
+  };
+
   const updateField = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+    if (errors[field] || errors.general) {
+      setErrors(prev => ({ ...prev, [field]: undefined, general: undefined }));
     }
   };
 
@@ -102,6 +164,8 @@ export const SignupScreen: React.FC = () => {
     }
     
     setLoading(true);
+    setErrors({}); // Clear previous errors
+    
     try {
       await AsyncStorage.setItem('signupData', JSON.stringify(formData));
       await authApi.sendOtp({ email: formData.email.trim() });
@@ -110,13 +174,19 @@ export const SignupScreen: React.FC = () => {
       router.push('/auth/verify-otp');
     } catch (err) {
       setLoading(false);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send OTP';
-      if (errorMessage.toLowerCase().includes('exists') || errorMessage.toLowerCase().includes('already')) {
-        setErrors({ email: 'An account with this email already exists' });
-        showToast('An account with this email already exists', 'error');
+      const { field, message } = parseBackendError(err);
+      
+      if (field && field !== 'general') {
+        setErrors({ [field]: message });
+      } else if (field === 'general') {
+        setErrors({ general: message });
       } else {
-        showToast(errorMessage, 'error');
+        // If no specific field, show as general error
+        setErrors({ general: message });
       }
+      
+      showToast(message, 'error');
+      // Don't navigate to OTP page if there's an error
     }
   };
 
@@ -154,6 +224,13 @@ export const SignupScreen: React.FC = () => {
           </View>
 
           <View style={styles.form}>
+            {errors.general && (
+              <View style={localStyles.generalErrorContainer}>
+                <Ionicons name="alert-circle" size={20} color="#FF5252" />
+                <Text style={localStyles.generalErrorText}>{errors.general}</Text>
+              </View>
+            )}
+
             <View style={styles.row}>
               <View style={styles.halfInput}>
                 <Text style={styles.inputLabel}>First Name</Text>
@@ -240,7 +317,7 @@ export const SignupScreen: React.FC = () => {
               {formData.password.length > 0 && (
                 <View style={localStyles.strengthContainer}>
                   <View style={localStyles.strengthBarBg}>
-                    <View style={[localStyles.strengthBar, { width: passwordStrength.width, backgroundColor: passwordStrength.color }]} />
+                    <View style={[localStyles.strengthBar, { width: passwordStrength.width as any, backgroundColor: passwordStrength.color }]} />
                   </View>
                   <Text style={[localStyles.strengthText, { color: passwordStrength.color }]}>
                     {passwordStrength.strength}
@@ -319,6 +396,23 @@ const localStyles = StyleSheet.create({
     color: '#FF5252',
     fontSize: TYPOGRAPHY.fontSize.sm,
     marginTop: SPACING.xs,
+  },
+  generalErrorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    backgroundColor: '#FFEBEE',
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF5252',
+    padding: SPACING.md,
+    borderRadius: SPACING.xs,
+    marginBottom: SPACING.md,
+  },
+  generalErrorText: {
+    flex: 1,
+    color: '#C62828',
+    fontSize: TYPOGRAPHY.fontSize.sm,
+    lineHeight: 20,
   },
   checkboxError: {
     borderColor: '#FF5252',

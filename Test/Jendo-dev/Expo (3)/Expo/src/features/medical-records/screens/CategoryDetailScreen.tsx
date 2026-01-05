@@ -173,9 +173,6 @@ export const CategoryDetailScreen: React.FC = () => {
                 </View>
                 <View style={styles.subcategoryInfo}>
                   <Text style={styles.subcategoryName}>{section.name}</Text>
-                  <Text style={styles.subcategoryCount}>
-                    {section.items?.length || 0} {(section.items?.length || 0) === 1 ? 'report' : 'reports'}
-                  </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={24} color={COLORS.textSecondary} />
               </TouchableOpacity>

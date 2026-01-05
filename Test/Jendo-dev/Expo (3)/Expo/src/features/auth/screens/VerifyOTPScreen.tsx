@@ -111,7 +111,10 @@ export const VerifyOTPScreen: React.FC = () => {
       // 2. Send signup data to backend using useAuth hook (stores user in Zustand)
       await signup(signupData);
       
-      // 3. Clear AsyncStorage
+      // 3. Set onboarding flag since user just signed up (already saw onboarding)
+      await AsyncStorage.setItem('hasSeenOnboarding', 'true');
+      
+      // 4. Clear AsyncStorage
       await AsyncStorage.removeItem('signupData');
       setLoading(false);
       

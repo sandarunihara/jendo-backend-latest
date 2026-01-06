@@ -145,11 +145,17 @@ public class WellnessRecommendationServiceImpl implements WellnessRecommendation
             return parsePayload(cached.get().getPayloadJson());
         }
 
-        JendoTest latestTest = jendoTestRepository
-                .findFirstByUserIdOrderByTestDateDescCreatedAtDesc(userId)
-                .orElseThrow(() -> new NotFoundException("No Jendo test found for user id: " + userId));
+        // Check if user has a Jendo test
+        Optional<JendoTest> latestTest = jendoTestRepository
+                .findFirstByUserIdOrderByTestDateDescCreatedAtDesc(userId);
+        
+        if (latestTest.isEmpty()) {
+            // No test found - return general wellness tips for all users
+            log.info("No Jendo test found for user {}, returning general wellness tips", userId);
+            return generateDefaultTips();
+        }
 
-        Map<String, List<WellnessRecommendationDto>> generated = generateAiTips(latestTest, window.start());
+        Map<String, List<WellnessRecommendationDto>> generated = generateAiTips(latestTest.get(), window.start());
         persistPayload(userId, window, generated);
         return generated;
     }
@@ -229,6 +235,56 @@ public class WellnessRecommendationServiceImpl implements WellnessRecommendation
             throw new NotFoundException("Wellness recommendation not found with id: " + id);
         }
         repository.deleteById(id);
+    }
+
+    private Map<String, List<WellnessRecommendationDto>> generateDefaultTips() {
+        Map<String, List<WellnessRecommendationDto>> defaultTips = new HashMap<>();
+        
+        String[] categories = {"diet", "exercise", "sleep", "stress"};
+        for (String category : categories) {
+            List<WellnessRecommendationDto> tips = List.of(
+                WellnessRecommendationDto.builder()
+                    .title("🥗 Healthy " + capitalize(category) + " Tip 1")
+                    .description("Start your wellness journey with " + category + " improvements")
+                    .longDescription("Complete a Jendo test to get personalized AI-powered wellness recommendations tailored to your health profile")
+                    .category(category)
+                    .riskLevel("GENERAL")
+                    .type("AI_GENERATED")
+                    .priority(0)
+                    .isActive(true)
+                    .build(),
+                WellnessRecommendationDto.builder()
+                    .title("💡 General " + capitalize(category) + " Tip 2")
+                    .description("Take the first step towards better health")
+                    .longDescription("Your personalized wellness tips await! Complete a Jendo test to unlock customized recommendations for " + category)
+                    .category(category)
+                    .riskLevel("GENERAL")
+                    .type("AI_GENERATED")
+                    .priority(0)
+                    .isActive(true)
+                    .build(),
+                WellnessRecommendationDto.builder()
+                    .title("✨ Begin Your Wellness Journey")
+                    .description("Unlock personalized " + category + " recommendations")
+                    .longDescription("Get started with your health assessment to receive AI-generated tips specifically designed for your unique health needs")
+                    .category(category)
+                    .riskLevel("GENERAL")
+                    .type("AI_GENERATED")
+                    .priority(0)
+                    .isActive(true)
+                    .build()
+            );
+            defaultTips.put(category, tips);
+        }
+        
+        return defaultTips;
+    }
+    
+    private String capitalize(String str) {
+        if (str == null || str.isEmpty()) {
+            return str;
+        }
+        return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
     private Window computeWindow(LocalDateTime now) {

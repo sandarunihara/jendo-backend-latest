@@ -33,13 +33,28 @@ async function ensureAndroidChannel() {
 
 export async function requestPushPermission(): Promise<boolean> {
   await ensureAndroidChannel();
+  // Request OS-level notification permission (needed on Android 13+ and iOS)
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
 
+  if (existingStatus !== 'granted') {
+    const permissionResult = await Notifications.requestPermissionsAsync({
+      android: { announcement: true }
+    });
+    finalStatus = permissionResult.status;
+  }
+
+  if (finalStatus !== 'granted') {
+    console.warn('Notifications permission not granted by user');
+    return false;
+  }
+
+  // Ensure FCM authorization (primarily relevant on iOS)
   const authStatus = await messaging().requestPermission();
-  const enabled =
+  return (
     authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-    authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-  return enabled;
+    authStatus === messaging.AuthorizationStatus.PROVISIONAL
+  );
 }
 
 export async function getFcmToken(): Promise<string | null> {
